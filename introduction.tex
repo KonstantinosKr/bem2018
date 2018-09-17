@@ -1,0 +1,75 @@
+\section{Introduction}
+%
+% Context of research; why is it important
+% What makes these models reliable?
+%
+Discrete Element Methods (DEM) are a popular technique to model granular flow,
+the break-up of brittle material, ice sheets, and many other phenomena.
+They describe the medium of interest as a set of rigid bodies that interact with
+each other through collisions and contact points.
+The expressiveness of such a simulation is determined on the one hand by the
+accuracy of the physical interaction model.
+On the other hand, it is determined by the accuracy of scale: the more
+rigid bodies (particles) can be simulated the more accurate the outcome.
+
+
+%
+% State-of-the-art role of physics
+%
+
+%\marginpar{@Konstantinos: Some hints
+% Non-spherical particles reduce efficiency
+%significantly [78,104] in book of Samiei 
+%- Analytical shape functions besides spheres [41,56,61,118] in Semiei
+%- Generic shape composition with spheres [75] und Samiei selber
+%}
+Many DEM codes restrict themselves to analytical shape models:
+Their particles are described by some analytical function; most of the time spheres.
+Furthermore, they stick to explicit time integrators (cmp. \cite{Boac2014} and
+references therein).
+Whenever particles are close to each other, i.e.~their distance underruns a
+given threshold, they are assumed to be in contact. An interaction model then
+realises two types of physics.
+On the one hand, it mitigates the real-world impact of collision,
+friction, and so forth.
+On the other hand, it mitigates the fact that real particles are not
+spherical/analytical \cite{Johnson2015}.
+
+
+%
+% What are shortcomings of today's solutions?
+%
+While the distributed memory parallelisation of DEM codes through classic
+domain decomposition is well understood and the codes scale
+(see \cite{Iglberger2010} as an example), most codes refrain from modelling
+particles as irregularly shaped objects and, thus, from eliminating the second role of the interaction model, as
+they already spend a majority of their compute time in collision detection.
+Iglberger et al.~\cite{Iglberger2010} report 31--34\% within a multiphysics
+setting, while Li \cite{Li1998} for example reports even 90\%.
+Detection becomes significantly more complicated once we switch from
+sphere-to-sphere or ellipsoid-to-ellipsoid checks to the comparison of billions
+of triangles if the particles are represented by meshes---notably if no
+constraints on convectivity are made and if explicit time stepping stops us
+from modelling complex particle shapes as compound of simpler convex shapes
+subject to a non-decomposable constraint.
+Injecting meshes particles into DEM is a single node challenge.
+
+
+%
+% Our contribution plus structure of paper. Usually I prefer to separate them,
+% but we are short of pages here.
+%
+We introduce a triangle-based collision detection scheme for DEM that
+supports particles of arbitrary triangle count, configuration and size.
+Geometric comparisons suffer from poor SIMDability if realised
+straightforwardly as they involve many case distinctions.
+We recast the geometric checks into a minimisation that falls back to
+classic geometric checks as emergency solver.
+This way, we obtain a collision detection algorithm that is both robust and can
+exploit wide vector registers (Section \ref{section:penalty}).
+Furthermore, it can be parallelised on multiple cores either by deploying the
+triangles among multiple cores or by handling sets of triangles (batches)
+concurrently (Section \ref{section:intra-particle}).
+Some numerical results in Section \ref{section:results} highlight the potential
+of our approach on multicore nodes before a brief summary and an outlook
+detail the impact on future DEM codes.

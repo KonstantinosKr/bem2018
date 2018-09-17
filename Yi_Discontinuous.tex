@@ -1,0 +1,1192 @@
+\documentclass[review]{elsarticle}
+\usepackage{amsfonts, amssymb,amsmath}
+\usepackage{lineno,hyperref}
+\usepackage{subfigure}
+\usepackage{psfrag}
+\usepackage{graphicx} % recommend for pdflatex
+\usepackage[utf8]{inputenc}
+\usepackage{caption}
+\usepackage{multirow}
+%\usepackage[biblabel]{cite}
+\usepackage[]{natbib}
+\modulolinenumbers[5]
+\usepackage{color,colordvi}
+\usepackage{epstopdf}
+\newcommand{\revision}[1]{\Red{#1}}
+%\usepackage[dvipdfm]{graphicx} 
+%\usepackage{bmpsize}
+
+%\usepackage{epsfig}
+
+
+%\def\Xint#1{\mathchoice
+	%{\XXint\displaystyle\textstyle{#1}}%
+%	{\XXint\textstyle\scriptstyle{#1}}%
+%	{\XXint\scriptstyle\scriptscriptstyle{#1}}%
+%	{\XXint\scriptscriptstyle\scriptscriptstyle{#1}}%
+%	\!\int}
+%\def\XXint#1#2#3{{\setbox0=\hbox{$#1{#2#3}{\int}$}
+%		\vcenter{\hbox{$#2#3$}}\kern-.5\wd0}}
+%\def\ddashint{\Xint=}
+%\def\dashint{\Xint-}
+
+\journal{Engineering Analysis with Boundary Elements}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% Elsevier bibliography styles
+%%%%%%%%%%%%%%%%%%%%%%%
+%% To change the style, put a % in front of the second line of the current style and
+%% remove the % from the second line of the style you would like to use.
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Numbered
+\bibliographystyle{model1-num-names} \biboptions{sort&compress} 
+
+%% Numbered without titles
+%\bibliographystyle{model1a-num-names}
+
+%% Harvard
+%\bibliographystyle{model2-names}\biboptions{authoryear}
+
+%% Vancouver numbered
+%\usepackage{numcompress}\bibliographystyle{model3-num-names}
+
+%% Vancouver name/year
+%\usepackage{numcompress}\bibliographystyle{model4-names}\biboptions{authoryear}
+
+%% APA style
+%\bibliographystyle{model5-names}\biboptions{authoryear}
+
+%% AMA style
+%\usepackage{numcompress}\bibliographystyle{model6-num-names}
+
+%% `Elsevier LaTeX' style
+%\bibliographystyle{elsarticle-num} \biboptions{sort&compress} 
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Discontinuous isogeometric boundary element (IGABEM) formulations in 3D automotive acoustics}
+%%\tnotetext[mytitlenote]{Fully documented templates are available in the elsarticle package on \href{http://www.ctan.org/tex-archive/macros/latex/contrib/elsarticle}{CTAN}.}
+
+%% Group authors per affiliation:
+%\author{Yi Sun\fnref{myfootnote}}
+%\address{Radarweg 29, Amsterdam}
+%%\fntext[myfootnote]{Since 1880.}
+
+%% or include affiliations in footnotes:
+\author[mymainaddress,mysecondaryaddress,mythirdaddress,myforthaddress]{Yi Sun\corref{mycorrespondingauthor}}
+\cortext[mycorrespondingauthor]{Corresponding author}
+\ead{yi.sun@whut.edu.cn}
+%\ead[url]{yisunariel@hotmail.com}
+
+\author[mymainaddress]{Jon Trevelyan}
+\author[mymainaddress,myfifthaddress]{Gabriel Hattori}
+\author[mysecondaryaddress,mythirdaddress,myforthaddress]{Chihua Lu}
+
+\address[mymainaddress]{Department of Engineering, Durham University, South Road, Durham, UK}
+\address[mysecondaryaddress]{School of Automotive Engineering, Wuhan University of Technology, Wuhan 430070, China}
+\address[mythirdaddress]{Hubei Key Laboratory of Advanced Technology for Automotive Components (Wuhan University of Technology), Wuhan 430070, China}
+\address[myforthaddress]{Hubei Collaborative Innovation Center for Automotive Components Technology (Wuhan University of Technology), Wuhan 430070, China}
+\address[myfifthaddress]{Department of Engineering, University of Cambridge, CB2 1PZ, Cambridge, UK}
+
+\begin{abstract}
+	
+The isogeometric boundary element method (IGABEM) is a technique that employs non-uniform rational B-splines (NURBS) as basis functions to discretise the solution variables as well as the problem geometry in a boundary element formulation. IGABEM has shown improved convergence properties over the conventional boundary element method (BEM) algorithms. However, in acoustics, IGABEM has only been applied to problems with simple smooth boundary conditions. In most real-world engineering design and analysis acoustic problems, geometric corners and discontinuities in boundary conditions can give rise to more complexity in the solution field that may be more efficiently modelled using a discontinuous approach. 
+
+In the current work we develop a discontinuous IGABEM formulation based on discontinuous elements and a suitable collocation scheme. Continuous and discontinuous formulations are compared. In this paper, a three dimensional model with different sets of boundary conditions is presented to explore the conditions under which a discontinuous formulation outperforms the continuous IGABEM. A simple car passenger compartment model characterised by panels with piecewise continuous impedance boundaries is presented to illustrate the potential of the proposed method for integrated engineering design and analysis.
+\end{abstract}
+
+\begin{keyword}
+NURBS, discontinuous IGABEM, car passenger compartment, interior acoustic problem
+%\texttt{elsarticle.cls}\sep \LaTeX\sep Elsevier \sep template
+%\MSC[2010] 00-01\sep  99-00
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+\section{INTRODUCTION}
+
+%\paragraph{Installation} If the document class \emph{elsarticle} is not available on your computer, you can download and install the system package \emph{texlive-publishers} (Linux) or install the \LaTeX\ package \emph{elsarticle} using the package manager of your \TeX\ installation, which is typically \TeX\ Live or Mik\TeX.
+
+%\paragraph{Usage} Once the package is properly installed, you can use the document class \emph{elsarticle} to create a manuscript. Please make sure that your manuscript follows the guidelines in the Guide for Authors of the relevant journal. It is not necessary to typeset your manuscript in exactly the same way as an article, unless you are submitting to a camera-ready copy (CRC) journal.
+
+%\paragraph{Functionality} The Elsevier article class is based on the standard article class and supports almost all of the functionality of that class. In addition, it features commands and options to format the
+%\begin{itemize}
+%\item document style
+%\item baselineskip
+%\item front matter
+%\item keywords and MSC codes
+%\item theorems, definitions and proofs
+%\item lables of enumerations
+%\item citation style and labeling.
+%\end{itemize}
+
+
+The noise, vibration and harshness (NVH) performance is one of the most important indicators in evaluating the quality of a vehicle. The driver's fatigue, vehicle riding comfort and the durability of components will be influenced by any interior noise and vibration \cite{Morello2011,HUSSAIN1994197}. These factors have led vehicle engineers to develop more accurate and effective methods to reduce the noise and vibration inside the passenger compartment. The development of these methods is underpinned by advanced computational modelling. Many Computer Aided Engineering (CAE) techniques are available for acoustic analysis, among them the Finite Element Method (FEM) \cite{Lonny,Zienkiewicz} and Boundary Element Method (BEM) \cite{Brebbia,He,Franzoni,Banerjee,Wu} are the most widely used of the deterministic methods. We note that for asymptotically high frequency problems, the methods based on optics, e.g. the ray tracing method \cite{KROKSTAD1968118,LeBot} and the Geometrical Theory of Diffraction \cite{Keller62,Tsingos2001}, are popular, but our focus is the lower frequency range within automobile passenger compartments. The BEM is popular with engineers for acoustic solutions because of its accuracy and the ease of considering infinite domains for problem involving radiation or scattering bodies. The BEM involves the problem discretisation and solution on the boundary of the domain \cite{Kirkup,Wrobel,Becker}, which reduces the complexity of mesh generation and the size of the problem.
+
+Although these tools have led to shorter design cycles, their practical application still involves some complications in producing an analysis-ready CAE model from NURBS-based CAD data. As a result, the geometry preparation and mesh generation remain time-consuming, especially for industrially relevant problems where mesh generation and refinement can take up to 80\% of the total analysis time \cite{Hughes}. In the automotive industry, the gap between CAD and CAE presents a considerable obstacle that extends the product design cycle, since many analysis runs are commonly required in an optimisation process. %Therefore, a calculation method which can offer more precise prediction on automobile passenger compartment acoustics is required, especially in the early design stage.
+
+The idea of Isogeometric Analysis (IGA), based on the use of non-uniform rational B-splines (NURBS) as the FEM approximation space, was first put forward by Hughes et al. \cite{Hughes} and has since received considerable attention. The concept is to use the splines typically employed in CAD geometry to capture the exact geometry for analysis directly. NURBS are the standard geometry representations in CAD and have been widely used in IGA \cite{COOX2016441,HUGHES2014290,COTTRELL20074160,Cottrell,NGUYEN201589}. Certain geometries that can only be approximated by polynomial functions can be represented exactly using NURBS, such as cylinders and spheres. Hence, the gap between CAD and CAE is bridged, and more accurate engineering simulations enabled on exact geometric representations. Most importantly, use of NURBS as an approximation space in both FEM and BEM has been shown to improve convergence properties over the use of classical Lagrange polynomials.
+
+The isogeometric boundary element method (IGABEM) combines both the IGA and BEM. Thus the discretisation is based on a CAD construction instead of the piecewise polynomials used in the conventional BEM. By taking NURBS as the basis for the numerical approximation of the acoustic field, mesh generation and refinement are greatly simplified. The IGABEM has developed rapidly in recent years \cite{Peake1, Li, Scott, Simpson2,BELIBASSAKIS201353,JonTrevelyan2018975} and has been applied successfully to various fields, e.g. potential problems \cite{Scott,Peake1,Peake2,Gong2017454,KEUCHEL2017488}, elasticity  \cite{Simpson2,BAI201554,Simpson2016168,PENG2017151}, electromagnetics \cite{SIMPSON2018264,dolz2018isogeometric} and shape optimisation \cite{KOSTAS2015611,GILLEBAART2016512,YOON2016119,LIAN20171}. Particularly, in the area of acoustic applications, Simpson et al. \cite{Simpson1} employed IGABEM based on T-splines to solve both interior and exterior acoustic problems. Further, Peake et al. proposed an extended isogeometric boundary element method (XIBEM) for two-dimensional Helmholtz problems in the mid-high frequency range \cite{Peake1} and then extended it to three dimensions \cite{Peake2}.  It should be noted that these analyses have been performed only for smooth boundary conditions while in acoustic problems of relevance to the automobile industry, the boundary conditions are mostly discontinuous, the sound absorption properties of lining materials and windows being markedly different. %Discontinuous elements are a mature technique and have been successfully applied in conventional BEM \cite{Xu1986,PARREIRA1988205}, and the idea has been explored in the IGABEM framework \cite{MARUSSIG2015458,Scott,YWang} as well. 
+
+The BEM is usually presented as a mixed formulation in which one solves a system containing both the primary variable and its derivative as unknowns. For example, in elasticity problems, the primary unknown is displacement. The second unknown, traction, is related through Hooke’s law to the derivative of the primary unknown. For Laplace and Helmholtz problems, the unknowns are the potential and its normal derivative. Since the normal is discontinuous across edges and at corners, one cannot use a continuous description of the derivative unknown, and BEM formulations generally need to accommodate this discontinuity. The literature contains descriptions of IGABEM formulations in which the derivative unknown is expanded in a discontinuous form; for example, Scott et al. \cite{Scott} and Marussig et al. \cite{MARUSSIG2015458} both study elasticity problems and use a discontinuous representation of traction. However, these authors maintain a continuous description of the primary variable, i.e. the displacement. Nevertheless, the BEM admits a fully discontinuous approach, in which both the primary unknown and its normal derivative are expressed using a discontinuous form. Thus, for example, the displacement can be discontinuous in elasticity analysis, as can be the potential in Laplace and Helmholtz problems. While discontinuity of the primary variable violates a physical constraint, it can allow a more efficient numerical approximation in certain circumstances, particularly where the solution exhibits large gradients. The use of such fully discontinuous elements in conventional BEM is a mature technique, going back to some of the earliest works by Brebbia on the newly named Boundary Element Method \cite{brebbia1977boundary} and later studied in more detail by Xu and Brebbia \cite{Xu1986} and Parreira \cite{PARREIRA1988205}. In this paper we apply the approach for the first time in IGABEM. This is in the context of Helmholtz problems. We mention that the discontinuous approach gives rise to additional degrees of freedom where the nodes containing the unknowns are no longer shared between elements, which will be discussed in Section \ref{section:discontinuous}. This requires more equations to be included to arrive at a square system, so a strategy for collocation point location is required. Traditionally this is achieved by collocating internally within elements rather than at the element perimeter. We present a strategy for locating collocation points in a later section, but note that Wang and Benson \cite{YWang} consider a similar problem in collocation for their nonsingular IGABEM formulation.
+
+In this paper, 
+%a fully discontinuous IGABEM scheme on acoustic problems, in which both the primary variable (potential) and its derivative are discontinuous, has been put forward for the first time. Comparisons 
+comparisons
+are made between discontinuous IGABEM and continuous IGABEM formulations. All models are characterised by panels with piecewise continuous impedance boundaries \cite{Zayed2007Hearing,guo2015multilayered,1391165,LAGHROUCHE2005367}.
+
+The remainder of the text is structured as follows. First, an introduction to B-splines and NURBS is given in Section 2. Section 3 and Section 4 present the conventional Boundary Element Method (BEM) and implementation of IGABEM, respectively. The formulation of the discontinuous IGABEM, including the collocation scheme, is introduced in Section 5. Then, several numerical examples are given in Section 6 to verify the accuracy of the proposed scheme, including a simplified car passenger compartment subjected to realistic boundary conditions. Finally, we draw some conclusions in Section 7. 
+
+\section{B-SPLINES AND NURBS}
+
+In this section we decribe the mathematical preliminaries relating to B-splines and NURBS that are required as a precursor to the later sections of the paper. The interested reader is directed to \cite{Piegl,Rogers} for a full description.
+ 
+\subsection{B-SPLINES}
+The definition of B-Spline basis functions starts with the concept of the knot vector. A knot vector is constructed from a sequence of non-decreasing real numbers:
+\begin{equation}
+\Xi=\left\{\xi_1,\xi_2,...,\xi_{n+p+1}\right\},\ \xi_i\in\mathbb{R}
+\label{eq:knot}
+\end{equation}
+where $\xi_i$ is the $i$-th knot in the parameter space representing the parametric coordinates of the curve, $i = 1,2, . . . , n + p + 1$, $n$ is the number of the basis functions which construct the B-splines, $p$ is the curve degree. The half-open interval $[\xi_i,\xi_{i+1})$ is called a knot span which can have zero length since the knots may be repeated. The interval $[\xi_1,\xi_{n+p+1})$ is called a patch. The B-spline basis functions can be built recursively by using the Cox-de Boor recurrence formula \cite{Cox, Boor} based on the knot vector:
+\begin{align}
+&p=0:  N_{i,0}(\xi)=\left\{
+\begin{array}{rcl}
+1      &       {\xi_i\leq\xi <\xi_{i+1}}\\
+0      &       \text{otherwise}\\
+\end{array} \right.
+\\
+&p>0:  N_{i,p}(\xi)=\frac{\xi-\xi_{i}}{\xi_{i+p}-\xi_{i}} N_{i,p-1}(\xi)+\frac{\xi_{i+p+1}-\xi}{\xi_{i+p+1}-\xi_{i+1}} N_{i+1,p-1}(\xi)
+\label{eq:knot vector}
+\end{align}
+
+B-spline curves \cite{Piegl,Rogers} are constructed from a linear combination of B-spline basis functions. A $p$-th degree piecewise polynomial B-spline curve $C^b(\xi)$ is given by
+\begin{equation}
+C^b(\xi)=\sum_{i=1}^{n}N_{i,p}(\xi)\mathbf{A}_i
+\end{equation}
+where ${\mathbf{A}_i}$ are the control points, which are position vectors determining the shape of the spline curve, and $N_{i,p}(\xi)$ denotes the $i$-th basis function from Eq. (\ref{eq:knot vector}). It should be noted that the concepts of control points and basis functions are similar to nodal coordinates and shape functions in BEM, respectively, but a key difference is that control points may lie off the physical boundary.
+
+A B-spline surface $S^b(\xi,\eta)$ is a tensor product surface of two B-splines. Given a net of control points $\mathbf{A}_{i,j}(i=1,2,...,n;j=1,2,...,m)$, polynomial degrees $p$ and $q$, two knot vectors $\Xi=[\xi_1,\xi_2,...,\xi_{n+p+1}]$ and $\varTheta=[\eta_1,\eta_2,...,\eta_{m+q+1}]$, a B-spline surface is defined as
+\begin{equation}
+S^b(\xi,\eta)=\sum_{i=1}^{n}\sum_{j=1}^{m}N_{i,p}(\xi)M_{j,q}(\eta)\mathbf{A}_{i,j}
+\label{eq:B-spline surface}
+\end{equation}
+where $N_{i,p}(\xi)$ and $M_{j,q}(\eta)$ represent univariate B-spline basis functions of degree $p$ and $q$, associated with knot vectors $\Xi$ and $\varTheta$, respectively.
+
+\subsection{KNOT REFINEMENT}
+In this work, h-refinement is adopted as the refinement method. In an isogeometric context this can be accomplished by knot insertion. Given a knot vector $\Lambda=\left\{\xi_1,\xi_2,...,\xi_{n+p+1}\right\},\ \xi_i\in\mathbb{R}$, a knot $\bar{\xi}\in[\xi_t,\xi_{t+1}]$ can be inserted into $\Lambda$, potentially multiple times. If $\bar{\xi}$ is to be inserted 3 times, for example, the new knot vector will be $ =\left\{\xi_1,\xi_2,...,\xi_t,\bar{\xi},\bar{\xi},\bar{\xi},\xi_{t+1},...,\xi_{n+p+1}\right\}$. Associated with this is a change in the control points, the original set $\left\{Q_1,Q_2,...,Q_n,\right\}$ being expanded and changed to $\left\{\bar{Q_1},\bar{Q_2},..,\bar{Q}_{n+3}\right\}$ through the following procedure:
+\begin{equation}
+\bar{Q}_i=\alpha_iQ_i+(1-\alpha_i)Q_{i-1},
+\end{equation}
+where
+\begin{equation}
+\alpha_i=\left\{
+\begin{array}{rcl}
+1,  &  1\leq i\leq{t-p}  \\
+\frac{\bar{\xi}-\xi_{i}}{\xi_{i+p}-\xi_{i}},  &  t-p+1\leq i\leq t  \\
+0,  &  t+1\leq i\leq{n+p+2}
+\end{array}\right.
+\end{equation}
+It should be noted that knot insertion just changes the vector space basis as well as the basis functions, while the geometry is not changed.
+
+\subsection{NURBS}
+NURBS are developed from B-splines but the introduction of weights gives more flexibility and enables the exact representation of geometric entities like circular arcs and spheres \cite{Piegl}. By defining a positive weight $\omega_i$ to each basis function, the NURBS basis functions $R_{i,p}(\xi)$ can be expressed as
+\begin{equation}
+R_{i,p}(\xi)=\frac{N_{i,p}(\xi)w_i}{W(\xi)} 
+\end{equation}
+with
+\begin{equation}
+W(\xi)=\sum_{j=1}^{n}N_{j,p}(\xi)w_j
+\end{equation}
+If all the weights are equal to 1, then $R_{i,p}(\xi)=N_{i,p}(\xi)$, and the NURBS degenerate into B-splines. A $p$-th degree NURBS curve is obtained by
+\begin{equation}
+C(\xi)=\sum_{i=1}^{n}R_{i,p}(\xi)\mathbf{A}_i
+\end{equation}
+The definition of a NURBS surface $S(\xi,\eta)$ is then completely analogous to a B-spline surface, given as
+\begin{equation}
+S(\xi,\eta)=\sum_{i=1}^{n}\sum_{j=1}^{m}R_{i,j,p,q}(\xi,\eta)\mathbf{A}_{i,j}
+\end{equation}
+with
+\begin{equation}
+R_{i,j,p,q}(\xi,\eta)=\frac{N_{i,p}(\xi)M_{j,q}(\eta)w_{i,j}}{\sum_{\hat{i}=1}^{n}\sum_{\hat{j}=1}^{m}N_{\hat{i},p}(\xi)M_{\hat{j},q}(\eta)w_{\hat{i},\hat{j}}}
+\end{equation}
+\\These same NURBS basis functions are also used to represent the field variables. 
+It should be noted that the basis functions of NURBS have some important properties:\\
+1. Non-negativity: $R_{i,j}(\xi,\eta)\geq0$ for all $i$,$j$,$\xi$ and $\eta$.\\
+2. Partition of unity: $\sum_{i=1}^{n}\sum_{j=1}^{m}R_{i,j}(\xi,\eta)=1$ for all $(\xi,\eta)$;\\
+3. Local support: if $(\xi,\eta)$ is outside the knot span $[\xi_i,\xi_{i+p+1}) \times [\eta_j,\eta_{j+p+1})$, $R_{i,j}(\xi,\eta)= 0$;\\
+4. Continuity: if $(\xi,\eta)$ is inside the knot span $[\xi_i,\xi_{i+p+1}) \times [\eta_j,\eta_{j+p+1})$, all partial derivatives of $R_{i,j}(\xi,\eta)$ exist. At a $\xi$ knot ($\eta$ knot) it is $p-k$ ($q-k$) times differentiable in the $\xi$ ($\eta$) direction, where $k$ is the multiplicity of the knot.
+
+\section{ Boundary Element Method (BEM)}
+
+Time-harmonic acoustic waves within the domain $\Omega \in \mathbb{R}^3$ with boundary $\Gamma$ are governed by the well-known Helmholtz equation \cite{Morse}: 
+\begin{equation}
+\nabla^2\phi(\mathbf{x})+k^2\phi(\mathbf{x})=0, \quad\mathbf{x}\in\Omega
+\label{eq:helmholtz}
+\end{equation}
+where $\nabla^2$ is the Laplacian operator, $\phi(\mathbf{x}) \in \mathbb{C}$ is the acoustic potential at the point $\mathbf x$, $\lambda$ is the wavelength, and $k=2\pi/\lambda$ is the wave number. We assume $ \ e^{-iwt}$ time dependence.
+
+We seek the solution to (\ref{eq:helmholtz}) subject to boundary conditions that may take the following forms in acoustic problems:
+\begin{itemize}
+	\item Dirichlet condition: the acoustic potential is known over the boundary:
+\end{itemize}
+\begin{equation} 
+\phi(\mathbf{x})=\overline{\phi}(\mathbf{x}), \quad \mathbf{x}\in \Gamma
+\label{eq:eq25}
+\end{equation}
+\begin{itemize}
+	\item Neumann condition: the derivative of the acoustic potential is known over the boundary:
+\end{itemize}
+\begin{equation}
+\frac{\partial\phi(\mathbf{x})}{\partial{n}}=\overline{q}, \quad \mathbf{x}\in \Gamma
+\label{eq:eq26}
+\end{equation}
+\begin{itemize}
+	\item Robin condition: the derivative of the potential is presented as a linear function of the potential:
+\end{itemize}
+\begin{equation}
+\alpha\frac{\partial\phi(\mathbf{x})}{\partial{n}}= \beta\phi(\mathbf{x})+\gamma, \quad \mathbf{x}\in \Gamma  
+\label{eq:eq27}
+\end{equation}
+
+Using standard techniques, Eq. (\ref{eq:helmholtz}) can be reformulated as a boundary integral equation (BIE). In this case, singularities appear in the formulation that must be dealt with using appropriate numerical integration schemes. There are a number of approaches for regularising a BIE (see \cite{KARAMI1999317,NME:NME1620360205,NME:NME1620100503,SLADEK1998251,NME:NME1620240908} for instance). In the present work, we follow the regularisation scheme in \cite{Simpson1}, where the BIE is expressed in an equivalent weakly-singular integral form. 
+%In the present work, we follow Simpson's scheme \cite{Simpson1} to use a regularisation method \cite{KARAMI1999317,NME:NME1620360205,NME:NME1620100503,SLADEK1998251,NME:NME1620240908} where the BIE is expressed in a weakly-singular integral form. 
+The regularisation is performed by making use of Liu's identities \cite{Liu} for the fundamental solutions of boundary element formulations, leading to the following regularised BIE: 
+%The regularisation is performed by making use of Liu's identities \cite{Liu} for the fundamental solutions of boundary element formulations, the Helmholtz equation (Eq. (\ref{eq:helmholtz})) can be expressed in an equivalent boundary integral equation (BIE) as follow: 
+\begin{equation}
+\int_\Gamma\left(\frac{\partial{G(\mathbf{s},\mathbf{x})}}{\partial{n}}\phi(\mathbf{x})-\frac{\partial{\overline{G}(\mathbf{s},\mathbf{x})}}{\partial{n}}\phi(\mathbf{s})\right)d\Gamma(\mathbf{x})=\int_\Gamma G(\mathbf{s},\mathbf{x})\frac{\partial{\phi(\mathbf{x})}}{\partial{n}}d\Gamma(\mathbf{x})
+\label{eq:final_regularization}
+\end{equation}
+where $\mathbf{s} \in\ Gamma$ represents the source point, $n$ is the unit outward pointing normal, $\phi(\mathbf{x})$ and $\frac{\partial{\phi(\mathbf{x})}}{\partial{n}}$ are the acoustic potential and its derivative, respectively. 
+
+For 3D problems, $G(\mathbf{s},\mathbf{x})$ is the Green's function given by:
+\begin{equation}
+G(\mathbf{s},\mathbf{x})=\frac{e^{ikr}}{4\pi r}
+\end{equation}
+and
+\begin{equation}
+\overline{G}(\mathbf{s},\mathbf{x})= \frac{1}{4\pi r}
+\label{eq:Laplace}
+\end{equation}
+is the Green's function for the Laplace equation.
+$\partial{G(\mathbf{s},\mathbf{x})}/\partial{n} $ is the corresponding derivative expressed as:   
+\begin{equation}
+\frac{\partial{G(\mathbf{s},\mathbf{x})}}{\partial{n}}=\frac{e^{ikr}}{4\pi r^2}\left(ikr-1\right)\frac{\partial{r}}{\partial{n}}
+\end{equation}
+and 
+\begin{equation}
+r=\left|\mathbf{x}-\mathbf{s}\right|
+\end{equation}
+
+It should be noted that the second integral of Eq. (\ref{eq:final_regularization}), which contains a term of order $\mathcal{O}\left(\frac{1}{r}\right)$, is still weakly-singular. In the BEM, the evaluation of weakly singular integrals can be enabled using a variety of approaches \cite{Stroud}. In this paper, the Telles coordinate transformation \cite{Telles} is adopted. 
+
+In the conventional BEM, the boundary $\Gamma$ is discretised into $E$ non-overlapping boundary elements, which can be expressed as:
+\begin{equation}
+\Gamma=\bigcup_{e=1}^E\Gamma_e
+\label{eq:sub_boundary}
+\end{equation}
+\\The elements represent the geometry through the mapping:
+\begin{equation}
+\Gamma_e=\mathbf{F}_e(\bar{\xi},\bar{\eta}), \quad\bar{\xi},\bar{\eta}\in[-1,1]
+\label{eq:mapping1}
+\end{equation}
+then Eq. (\ref{eq:final_regularization}) can be written as a discretised form:
+\begin{equation}
+\sum_{e=1}^{E}\sum_{m=1}^{M} P_{em}(\mathbf{s})\phi_{em} - \sum_{e=1}^{E}\sum_{m=1}^{M} \bar{P}_{em}(\mathbf{s})\phi_{\hat{e}m} =\sum_{e=1}^{E}\sum_{m=1}^{M} Q_{em}(\mathbf{s})\frac{\partial\phi_{em}}{\partial n}
+\label{eq:discretise}
+\end{equation}
+where 
+\begin{align}
+P_{em} &= \int_{-1}^1\int_{-1}^1 \frac{\partial{G(\bar{\xi},\bar{\eta})}}{\partial n} N_{em}(\bar{\xi},\bar{\eta}) J_{e}(\bar{\xi},\bar{\eta}) d\bar{\xi} d\bar{\eta}\label{eq:BemDiscretise1}  \\
+\bar{P}_{em} &= \int_{-1}^1\int_{-1}^1 \frac{\partial{\bar{G}(\bar{\xi},\bar{\eta})}}{\partial n} N_{\hat{e}m}(\bar{\xi},\bar{\eta}) J_{e}(\bar{\xi},\bar{\eta}) d\bar{\xi} d\bar{\eta}\label{eq:BemDiscretise2}  \\
+Q_{em} &= \int_{-1}^1\int_{-1}^1 G(\bar{\xi},\bar{\eta}) N_{em}(\bar{\xi},\bar{\eta}) J_{e}(\bar{\xi},\bar{\eta}) d\bar{\xi} d\bar{\eta} 
+\label{eq:BemDiscretise3}
+\end{align}
+where $M$ is the number of nodes on the element, $\hat{e}$ is the index of an element on which the source point lies, $N_{em}$ are the corresponding shape functions, and $J_{e}$ is the Jacobian from the mapping in Eq. (\ref{eq:mapping1}).
+
+Taking the point $\mathbf s$ to lie at each node in turn, the collocation form of the BIE yields a set of equations relating all potential and velocity coefficients as follows:
+\begin{equation}
+\mathbf H\boldsymbol u = \mathbf G \boldsymbol q
+%\mathbf H\boldsymbol\phi = \mathbf G\frac{\partial{\boldsymbol\phi}}{\partial{n}} 
+\label{eq:HG}
+\end{equation}
+where $\boldsymbol u$, $\boldsymbol q$ are vectors containing nodal values of $\boldsymbol\phi$, $\frac{\partial{\boldsymbol\phi}}{\partial{n}}$ . The fully populated matrix $\mathbf H$ contains all integrals of the left-hand side terms of Eq. (\ref{eq:discretise}), and matrix $\mathbf G$ is assembled by integrals of the right-hand side terms of Eq. (\ref{eq:discretise}). $\boldsymbol\phi$ and  $\partial{\boldsymbol\phi}/\partial{n}$ are vectors containing acoustic potential and normal derivative coefficients, respectively. 
+
+By reordering all the unknowns and related coefficients to the left-hand side and all the knowns and related coefficients to the right-hand side, we obtain a linear system:
+\begin{equation}
+\mathbf{Ax}=\mathbf b
+\label{eq:finaleq}
+\end{equation}
+where $\mathbf{A}$ is an unsymmetrical and fully populated square matrix, the vector $\mathbf{x}$ contains all unknown potential and derivative coefficients while the vector  $\mathbf{b}$ is calculated from all known coefficient and their associated terms. Eq. (\ref{eq:finaleq}) is a linear system which can be solved directly. 
+
+The BIE can be applied to both bounded and unbounded (infinite) domains. However, for the case of unbounded domains, it is well known to result in a singular system at wave numbers corresponding to the eigenfrequencies of the interior problem formed on the boundary $\Gamma$. The present work is entirely aimed at bounded domains modelling automotive passenger compartments, so there is no consideration of the strategies (CHIEF\cite{Harry}, Burton-Miller\cite{Burton201}) that are widely used to overcome this system degeneracy.
+
+
+\section{IGABEM for Acoustics}
+
+Instead of polynomial shape functions, NURBS basis functions are employed to represent $\phi$, $\partial\phi/\partial n$ as well as the geometry in the IGABEM. The boundary is divided into $E$ non-overlapping isogeometric patches $\Gamma_e$, analogously to the conventional BEM in Eq. (\ref{eq:sub_boundary}). A local coordinate mapping is defined on each patch $\Gamma_e$ as follows:
+\begin{equation}
+\Gamma_e={\mathbf{F}_e(u,v),  \quad u,v\in[0,1]}
+\end{equation}
+It should be noted that the integration is calculated knot span by knot span, e.g. $[\xi_i,\xi_{i+1}]\times[\eta_j,\eta_{j+1}]$ (see Figure \ref{fig:physical}), while in the integration using Gauss-Legendre quadrature, the parametric system $Y=(\bar{\xi},\bar{\eta})$ is defined in $[-1,1]\times[-1,1]$. Figure \ref{fig:phy_loc} shows the coordinate transformation in the IGABEM. This requires that an additional transformation be defined to map from the local coordinates to the parametric space.
+
+\begin{figure}[!htb]
+%	\psfrag{Collocation Points}{\tiny Collocation Points}
+%\psfrag{ξi}{$\xi_i$}
+\psfrag{xi}{$\xi_i$}
+\psfrag{yi}{$\xi_{i+1}$}
+\psfrag{eta}{$\eta_j$}
+\psfrag{eta+1}{$\eta_{j+1}$}
+\psfrag{uu}{$u$}
+\psfrag{vv}{$v$}
+\psfrag{knot}{a knot span}
+	\centering
+	\hspace{-0.5cm}  
+	\subfigure[Patch]{\includegraphics[scale=0.20]{physical_domain.eps}\label{fig:physical}}
+	\hspace{2cm}
+\psfrag{mm}{$\bar{\xi}$}
+\psfrag{etai}{$\bar{\eta}$}
+	\subfigure[Knot span in parametric space $Y$]{\includegraphics[scale=0.26]{local_domain.eps}\label{fig:local}}
+	\caption{Coordinate transformation in IGABEM.}
+	\label{fig:phy_loc}
+\end{figure}
+
+The total Jacobian can be expressed as:
+\begin{equation}
+J_Y = \left|\frac{\partial{\mathbf{x}}}{\partial{\boldsymbol{F}}} \frac{\partial{\boldsymbol{F}}}{\partial{\boldsymbol {Y}}}\right|
+\label{eq:IGA_mapping}
+\end{equation}
+where the first component is the Jacobian mapping from the global to local coordinates on each patch, and the second term is the Jacobian mapping from local coordinates to the parametric space. 
+
+The acoustic potential and the normal derivative can be discretised in terms of a NURBS expansion, respectively:
+\begin{equation}
+\phi(\mathbf{x})=\sum_{i=1}^{n}\sum_{j=1}^{m}R_{i,j,p,q}(u(\mathbf{x}),v(\mathbf{x}))\widetilde{\phi}_{j,p}
+\label{eq:eq21}
+\end{equation}
+\begin{equation}
+\frac{\partial\phi(\mathbf{x})}{\partial n}=\sum_{i=1}^{n}\sum_{j=1}^{m}R_{i,j,p,q}(u(\mathbf{x}),v(\mathbf{x}))\widetilde{q}_{j,p}
+\label{eq:eq22}
+\end{equation}
+where $n$ and $m$ are the number of control points, $p$ and $q$ are the curve degrees in the $u$ and $v$ direction, respectively. $\widetilde{\phi}_{j,p}$ and $\widetilde{q}_{j,p}$ are the coefficients for potentials and derivatives associated with the control points. It is important to note that $\widetilde{\phi}_{j,p}$ and $\widetilde{q}_{j,p}$ are no longer the nodal potentials and derivatives, but are simply coefficients from which these quantities can be recovered using \eqref{eq:eq21} and \eqref{eq:eq22}; indeed, since the control points may not lie on the geometry it would be meaningless to assign a potential or potential derivative to them. The final isogeometric boundary integral equation can be written by substituting Eq. (\ref{eq:eq21}) and Eq. (\ref{eq:eq22}) into Eq. (\ref{eq:discretise}):
+\begin{equation}
+\begin{split}
+\sum_{e=1}^{E}\sum_{i=1}^{n}\sum_{j=1}^{m}  P_{eij}(\mathbf{s})\phi_{eij} -\sum_{e=1}^{E}\sum_{i=1}^{n}\sum_{j=1}^{m}  \bar{P}_{eij}(\mathbf{s})\phi_{\hat{e}ij} = \sum_{e=1}^{E}\sum_{i=1}^{n}\sum_{j=1}^{m} Q_{eij}(\mathbf{s})\frac{\partial\phi_{eij}}{\partial n}
+\end{split}
+\label{eq:eq23}
+\end{equation}
+with 
+\begin{align}
+P_{eij} &= \int_{-1}^1\int_{-1}^1 \frac{\partial{G(\bar{\xi},\bar{\eta})}}{\partial n} R_{eij}(\bar{\xi},\bar{\eta}) J_{Y_{eij}}(\bar{\xi},\bar{\eta}) d\bar{\xi} d\bar{\eta}  \\
+\bar{P}_{eij} &= \int_{-1}^1\int_{-1}^1 \frac{\partial{\bar{G}(\bar{\xi},\bar{\eta})}}{\partial n} R_{\hat{e}ij}(\bar{\xi},\bar{\eta}) J_{Y_{eij}}(\bar{\xi},\bar{\eta}) d\bar{\xi} d\bar{\eta}  \\
+Q_{eij} &= \int_{-1}^1\int_{-1}^1 G(\bar{\xi},\bar{\eta}) R_{eij}(\bar{\xi},\bar{\eta}) J_{Y_{eij}}(\bar{\xi},\bar{\eta}) d\bar{\xi} d\bar{\eta} 
+\end{align}
+where $\hat{e}$ is the index of an element on which the source point lies, $R_{eij}$ are the corresponding NURBS basis functions, and $J_{Y_{eij}}$ is the Jacobian from the mapping in Eq. (\ref{eq:IGA_mapping}). Here two indices $i,j$ are used to refer to the control points and associated basis functions in an element, as a B-spline surface is obtained by taking a bidirectional net of control points, requiring two knot vectors such as \eqref{eq:B-spline surface}.
+
+In general, the control points are no longer able to be taken as the collocation points in IGABEM, since they may not lie on the geometry boundary (except in flat patches). Alternatively, the Greville abscissae \cite{Greville, Johnson} may be used to define the position of collocation points in the parameter space as: 
+\begin{equation}
+\xi'_g=\frac{\xi_{g+1}+\xi_{g+2}+...+\xi_{g+p}}{p}, \quad g=1,2,...,N 
+\end{equation}
+where $N$ denotes the number of control points, and $p$ is the degree of the NURBS.
+
+After defining the collocation points, the boundary integral equations defined in Eq. (\ref{eq:eq23}) can be assembled in matrix form analogously to conventional BEM.
+
+\section{Discontinuous Isogeometric Boundary Element Method}
+
+\subsection{Discontinuous Isogeometric Boundary Patch}
+
+Discontinuous elements have been used in conventional BEM for many years, with the nodes located away from the element edges. This allows for greater flexibility in mesh grading, and also lends itself to parallel implementations since every term in the influence matrices $H$ and $G$ has only a single contribution from a single integral over an element. Here we make use of a discontinuous formulation to improve accuracy in the presence of discontinuous boundary conditions. In IGABEM, we are constrained by the definition of NURBS to have control points on the edges of the patch, requiring some adaptation in the way discontinuous elements are implemented. In order to obtain a square system (Eq. (\ref{eq:finaleq})), the number of collocation points must be equal to the number of unknowns. In a discontinuous model, there are multiple control points in the same location, each having membership of a different patch. This evokes the idea of double nodes in early BEM literature. In order to ensure a suitable number of collocation points, the simplest scheme is to locate them internally in each patch as shown in Figure \ref{interior}. The discontinuous IGABEM patches allow the potential fields to become discontinuous at the interfaces between patches. Although the true solution will have a continuous potential field, the discontinuity in boundary conditions can give rise to large potential derivatives that may be more efficiently approximated if both the potential and derivative are approximated in a discontinuous basis.
+
+\begin{figure}[!htb]
+	\psfrag{Collocation Points}{\tiny Collocation Points}
+	\centering
+	\hspace{-0.5cm}
+	\subfigure[Continuous]{\includegraphics[scale=0.8]{cont.eps}\label{fig:cont}}
+	\hspace{2cm}
+	\subfigure[Discontinuous]{\includegraphics[scale=0.8]{discont.eps}\label{fig:discont}}
+	\caption{Isogeometric patches in 3D.}\label{interior}
+\end{figure}
+\label{section:discontinuous}
+
+\subsection{Collocation}
+With discontinuous elements, a collocation strategy is needed because some control points will be coincident, but collocation at coincident points will lead to identical equations and a rank-deficient system.  Marburg \cite{Marburg} has investigated the location of nodal points in the discontinuous BEM based on a long duct model, and found that the zeroes of the Legendre polynomials are the optimal locations of the nodes. However, this applies for conventional BEM approaches, where collocation takes place at the nodes. In the IGABEM schemes introduced in the current work, collocation points are separated from the control points that are associated with the concept of a node. In this paper, we consider three candidate collocation schemes for discontinuous elements:
+
+\begin{enumerate}
+\item \textit{Uniform collocation}: where the collocation points are uniformly distributed in the parameter domain.
+\item \textit{Legendre polynomials}: where the collocation points are generatedat the roots of Legendre polynomials in the parameter domain. 
+\item \textit{Modified-Greville abscissae}: where the parameters correspond to collocation points defined by a Modified-Greville abscissae definition studied in \cite{YWang}, moving the first and the last collocation points away from the edges of the patches. Initially, the collocation points are generated as the Greville abscissae along each direction in the parameter space as
+\end{enumerate}
+
+\begin{equation}
+\xi'_{i} = \frac{1}{p}(\xi_{i+1}+\xi_{i+2}+...+\xi_{i+p}) \quad \: i = 1,2,...,N,
+\label{eq:greville}    
+\end{equation}
+where $p$ is the degree of the NURBS, and $N$ is the number of control points in the $\xi$ direction.
+
+Then, a coefficient $\beta$ is brought in to move the first and the last collocation points of Eq. (\ref{eq:greville}) inside the patch as
+\begin{align}
+\xi'_{1} &= \xi'_{1}+\beta(\xi'_{2}-\xi'_{1})\\
+\xi'_{n} &= \xi'_{n}+\beta(\xi'_{n}-\xi'_{n-1})
+\end{align}
+where the coefficient $\beta = 0.5$ has been proved to be the optimal value \cite{YWang}. Figure \ref{Gre_parameter} shows the different locations of collocation points in parametric space according to the three schemes. In this case, in both parametric directions we have knot vector $\Upsilon= \left\{0,0,0,1,1,1\right\}$, $p=2$ and $N=3$.
+\psfrag{Parameter Domain}{Parameter domain}
+\begin{figure}[!htb]
+%\psfrag{Gaussian}{\tiny Gaussian}
+%\psfrag{Uniform}{\tiny Uniform}
+%\psfrag{Greville}{\tiny Greville}
+\centering
+\includegraphics[width=9cm]{parametric_domain.eps} 
+\caption{Collocation methods in parametric domain.}\label{Gre_parameter}                                                                                                                                                                                                                                
+\end{figure}
+
+It should be noticed that DOF that are normally shared between adjacent elements are no longer shared so that the total number of DOF increases compared to a continuous element model having the same number of elements. This can mean that a smaller number of elements is required to achieve the same accuracy, so it is not obvious whether a continuous or discontinuous approach is preferred. In this work, the comparison between the different collocation methods is based on meshes with the same number of DOF instead of with the same number of elements.
+
+We study the convergence for a simple problem using the three collocation schemes to decide which strategy to use in this work. First we consider the acoustic field inside a cubic cavity lying in $(x,y,z)\in [0,3]^3$, with dimensions in metres. We analyse the case of a plane wave, of wavelength $\lambda=5$ $m$, propagating through the cube in the $x$-direction. This is a rather low frequency case, a choice driven by the conditions in the application example we focus on in automotive engineering.
+
+
+The Dirichlet boundary condition $\bar{\phi}=1$ is applied on the patch lying in $x=0$, and the Neumann condition with
+\begin{equation}
+\bar{q}=-k \sin{3k}+i k \cos{3k}
+\end{equation} 
+is applied on the patch lying in $x=3$, as it is the analytical solution of the derivative on the corresponding patch. A Neumann condition with $\bar{q}=0$ is applied on all other patches. 
+
+The $L_2$ norm of the potential was calculated over the entire boundary as:
+\begin{equation}
+\parallel\phi\parallel_{L_2(\Gamma)}=\sqrt{\int_{\Gamma}\left|\phi\right|^2d\Gamma}
+\label{eq:errorL2}
+\end{equation}
+We define an error metric $\epsilon$ evaluated as
+\begin{equation}
+\epsilon=\frac{\parallel\phi-\phi_{ref}\parallel_{L_2(\Gamma)}}{\parallel\phi_{ref}\parallel_{L_2(\Gamma)}}
+\end{equation}
+where $\phi_{ref}$ is the reference solution obtained from the converged result of a conventional BEM analysis using quadratic shape functions. 
+
+
+Figure \ref{collocation_result} shows the convergence of the error norm $\epsilon$ with respect to the number of the degree of freedom, $N_d$, and suggests that, in the case of quadratic uniform knot vectors, uniformly distributed collocation points give rise to faster convergence and provide a more accurate result compared to the other two strategies.
+\begin{figure}[!htb]
+\psfrag{Error}{$Log \epsilon$}
+\psfrag{DOF}{$Log N_d$}
+	\centering
+	\includegraphics[width=9cm]{cube_collocation.eps} 
+	\caption{Comparison between collocation methods based on a cube model.}\label{collocation_result}                                                                                                                                                                                                                                
+\end{figure}
+
+Another example using the geometry of a quarter cylinder is analysed to reinforce the conclusion drawn above. The cylinder geometry is shown in Figure \ref{cylinder}. The rear surface of the cylinder lies in $z=0$ while the forward facing surface lies in $z=3$ of the Cartesian space, with dimensions in metres. We consider a spherical wave of wavelength $\lambda=5$ $m$ , emanating from a point source located at $[0,0,6]$, passing through the domain.
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=9cm]{cylinder.eps} 
+	\caption{A quarter cylinder.}\label{cylinder}         
+\end{figure}
+
+The Neumann condition with
+\begin{equation}
+	\bar{q}=3(ikr-1)e^{ikr}/2 \pi r^3
+\end{equation}  
+is applied on the patch lying in $z=0$, 
+and a Neumann condition with
+\begin{equation}
+	\bar{q}=3(1-ikr)e^{ikr}/4 \pi r^3
+\end{equation}  
+is applied on the patch lying in $z=3$, where $r$ is the distance from the source points. In addition, the Dirichlet boundary condition $\bar{\phi}= e^{ikr}/4 \pi r$ is applied on all remaining patches. Figure \ref{cylinder_convergence} shows the calculation result of this problem, from which we can also see that the uniform collocation method gives rise to faster convergence and higher accuracy compared to the other two collocation strategies. This agrees with the conclusion we draw from the cube problem. Thus from the two sets of results we proceed to the remaining analyses using uniformly distributed collocation points.
+
+
+\begin{figure}[!htb]
+\psfrag{Error}{$Log \epsilon$}
+\psfrag{DOF}{$Log N_d$}
+	\centering
+	\includegraphics[width=9cm]{cylinder_convergence.eps} 
+	\caption{Comparison between collocation methods based on a quarter cylinder model.}\label{cylinder_convergence}         
+\end{figure}
+
+
+\section{NUMERICAL EXAMPLES}
+
+\subsection{Cube} 
+This section presents a numerical example to investigate the accuracy of the proposed discontinuous IGABEM and evaluate the performance between the IGABEM and BEM, considering both continuous and discontinuous approaches. The problem is depicted in Figure \ref{model}. The cubic domain is constructed by 10 piecewise continuous impedance patches on which different boundary conditions are applied. The cubic cavity lies in $(x,y,z)\in[0,3]^3$, with dimensions in metres. We define patch 1 as the small square patch $\{(y,z)\in[1,2]^2,x=3\}$ and patch 2 as the patch lying in the plane $x=0$. The wavelength is $\lambda = 5\ m$ in this case. 
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=9cm]{cubemodel.eps} 
+	\caption{A 3D cubic model with piecewise continuous impedance boundaries.}\label{model}                                                                                                                                                                                                                                
+\end{figure}
+
+In this example, two sets of boundary conditions are applied. These are chosen to give the problem the character of a glass panel surrounded by an absorbing material.
+
+(1) A Neumann condition with  $\bar q=0$, $\bar q=1$ is applied on patch 1 and patch 2, respectively, and a Robin condition with $\alpha=1,\beta=-2,\gamma =1+i$ is applied on the remaining patches. 
+\begin{figure}[!htb]
+
+
+\psfrag{Error}{\hspace{-1.0cm} \rotatebox{180}{$Log\epsilon$} }
+\psfrag{DOF}{$Log N_d$}
+	\centering
+	\includegraphics[scale=0.71]{cube_conver1.eps}
+	\caption{Comparison between BEM and IGABEM (continuous and discontinuous) for first set of boundary conditions.}
+	\label{cube_conver1}
+\end{figure}
+
+
+Figure \ref{cube_conver1} shows the comparison for the accuracy and convergence between the proposed method and the discontinuous BEM as well as a comparison between continuous BEM and IGABEM; it is clear that IGABEM offers a significant advantage over BEM in accuracy for any given problem size. Also, the discontinuous IGABEM converges faster than discontinuous BEM. However, discontinuous IGABEM did not show any improvement compared to continuous IGABEM for this set of boundary conditions.
+
+
+(2) A Neumann condition with $\bar q=0$, $\bar q=1$ is applied on patch 1 and patch 2, respectively. A Robin condition with $\alpha=1,\beta=10,\gamma =1+i$ is applied on the rest of the patches. The results are evaluated in the same way as in the previous example. Figure \ref{cube_conver2} shows the error comparison between different methods, and this shows contrary behaviour from the first set of boundary condition. In this example, the discontinuous IGABEM outperforms the continuous IGABEM. 
+\begin{figure}[!htb]
+\psfrag{Error}{\hspace{-1.0cm} \rotatebox{180}{$Log\epsilon$} }
+\psfrag{DOF}{$Log N_d$}
+	\centering
+	\includegraphics[scale=0.71]{cube_conver2.eps}
+	\caption{Comparison between BEM and IGABEM (continuous and discontinuous) for the second set of boundary conditions.}
+	\label{cube_conver2}
+\end{figure}
+
+It is clear that the two sets of boundary conditions give two different results for continuous and discontinuous IGABEM. Next we study different sets of boundary conditions also based on the cube model to determine the conditions for the discontinuous IGABEM outperforming the continuous IGABEM. All the boundary conditions are fixed except for the value of $\left|\frac{\beta}{\alpha}\right|$, which we vary from 1 to 20. Table \ref{cord} shows the comparison between conventional IGABEM and discontinuous IGABEM using the error as defined in Eq. (\ref{eq:errorL2}), where $C$ denotes the continuous IGABEM, $D$ denotes the discontinuous IGABEM, `coarse' describes a model in which $4\times 4$ control points are used on each patch, while `refined' means that $12\times 12$ control points are used. The last column of the Table represents the recommendation for continuous or discontinuous depending on the value of $\left|\frac{\beta}{\alpha}\right|$. One can conclude that the discontinuous IGABEM outperforms the continuous IGABEM when the value of $\left|\frac{\beta}{\alpha}\right|$ is greater than 5. 
+
+
+\setlength{\arrayrulewidth}{0.5mm}
+\setlength{\tabcolsep}{14pt}
+\renewcommand{\arraystretch}{1}
+\begin{table}\footnotesize
+	\caption{A set of Robin boundary conditions studied.}
+	%\begin{tabular}{|p{0.5cm}|p{1.2cm}|p{1.2cm}|p{1.2cm}| p{1.2cm}|p{1.2cm}|}
+	
+	%\begin{tabular}{|c|c|c|c|c|c|}
+	\begin{tabular}{|p{0.3cm}|c|c|c|c|p{0.5cm}|}
+		%\hline
+		%\multicolumn{3}{|c|}{Country List} \\
+		\hline
+		\multirow{2}{*}{\!\!\!\!$|\boldsymbol{\beta/\alpha}|$} &\multicolumn{4}{|c|}{Error} & \multirow{2}{*}{\!\!\!C or D} \\
+		\cline{2-5}
+		& C coarse & C refined & D coarse & D refined &  \\
+		\hline
+		1 & 0.0359 & 0.0053  & 0.0681 & 0.0152 & C \\
+		2 & 0.0361 & 0.0051  & 0.0672 & 0.0149 & C \\
+		3 & 0.0378 & 0.0052  & 0.0641 & 0.0125 & C \\
+		4 & 0.0382 & 0.0042  & 0.0585 & 0.0085 & C \\
+		\hline 
+		5 & 0.0397 & 0.0051 & 0.0394 & 0.0048 & D \\
+		6 & 0.0428 & 0.0051  & 0.0322 & 0.0039 & D \\
+		7 & 0.0424 & 0.0052 & 0.0342 & 0.0036 & D \\
+		8 & 0.0435 & 0.0055  & 0.0328 & 0.0032 & D \\
+		9 & 0.0452 & 0.0056  & 0.0319 & 0.0033 & D \\
+		10 & 0.0398 & 0.0056  & 0.0263 & 0.0039 & D \\
+		15 & 0.0465 & 0.0053  & 0.0306 & 0.0037 & D \\
+		20 & 0.0452 & 0.0061  & 0.0291 & 0.0031 & D \\
+		\hline
+	\end{tabular}
+	\label{cord}
+\end{table}
+
+\subsection{Simplified vehicle model}
+
+In this section, a simplified interior acoustic problem of a vehicle passenger compartment is presented. The acoustic potential at a certain interior point is studied based on several sets of boundary conditions.
+
+The interior sound field can be simulated in the acoustic cavity subject to three different boundary conditions:\\
+
+(1) If a boundary surface is oscillating, e.g. the vehicle dashboard, the boundary condition can be expressed in a Neumann condition form:\\
+\begin{equation}
+\frac{\partial\phi(\mathbf{x})}{\partial{n}}=-i\rho_0\omega v
+\end{equation}
+where $\rho_0=1.29$ $kg/m^3$ is the air density, $\omega=2\pi C/\lambda$ is the circular frequency of the acoustic source, $C = 340.29$ $m/s$ is the sound speed, $\lambda=5$ $m$ is the wave length and $v$ is the amplitude of the normal component of the velocity on the surface. In this study we take $v$ to be 1.452 $mm/s$ following Zhu \cite{Jing}.
+
+(2) If the boundary surface is fully reflective, e.g.~the window glass, the boundary condition on the surface can be expressed as a homogeneous Neumann condition form:\\
+\begin{equation}
+\frac{\partial\phi(\mathbf{x})}{\partial{n}}=0
+\end{equation}
+
+(3) For absorbing boundaries, e.g.~the interior lining material for the automobile, the boundary condition can be expressed as a Robin condition form:\\
+ \begin{equation}
+ \frac{\partial\phi(\mathbf{x})}{\partial{n}}= -i\rho_0\omega\frac{\phi(\mathbf{x})}{Z}
+ \end{equation}
+where we take $\rho_0=1.29$ $kg/m^3$ as the air density, $\omega=2\pi C/\lambda$ as the circular frequency of the acoustic source, $C = 340.29$ $m/s$ as the sound speed, $\lambda=5$ $m$ as the wave length, and $Z =1.66-6.22i$ \cite{Jing} as the acoustic impedance of the lining material.
+
+The passenger compartment model is characterised by 22 piecewise continuous impedance patches as shown in Fig. \ref{simple_car}.The sub-wavelength details of the compartment are omitted as they do not contribute significantly to the solution. The first Neumann boundary condition is applied on the blue panels as they represent the vehicle dashboard. The second Neumann boundary condition is applied on the grey panels as they represent the windows of the vehicle. A Robin condition is applied on the remaining panels which represent the vehicle inner lining materials.
+
+\begin{figure}[!htp]
+	\centering
+	\includegraphics[scale=0.4]{carmodel.eps}
+%	\includegraphics[width=\textwidth,natwidth=610,natheight=842]{dd.jpg}
+	\caption{A simplified car model.}
+	\label{simple_car}
+\end{figure}
+
+In this example, the converged result of a conventional BEM analysis using quadratic shape functions is  taken as the reference solution. Figure \ref{car_conver} presents the result comparison between the three different BEM schemes, from which we can conclude that discontinuous IGABEM outperforms the conventional BEM and continuous IGABEM in this approximation to a real vehicle problem. In this case using realistic material properties, the value of $\beta/\alpha$ in the Robin condition is 85.64, so that these results agree with the conclusion of the analysis in Section 6.1 that the discontinuous IGABEM can provide a more accurate result than IGABEM when $\beta/\alpha>5$. In addition, the acoustic potential at a certain point inside the model representing the position near the driver's ear has also been studied, shown in Figure \ref{car_ear}. This result converges faster with the discontinuous IGABEM formulation and shows that the discontinuous IGABEM scheme is a promising method for simulating passenger compartment acoustics in the automotive sector.
+\begin{figure}[!htb]
+\psfrag{Error}{\hspace{-1.0cm} \rotatebox{0}{$Log\epsilon$} }
+\psfrag{DOF}{$Log N_d$}
+	\centering
+	\includegraphics[scale=0.6]{car_conver.eps}
+	\caption{Comparison between BEM and IGABEM (continuous and discontinuous) of the vehicle model.}
+	\label{car_conver}
+\end{figure}
+
+
+\begin{figure}[!htb]
+\psfrag{Error}{\hspace{-1.0cm}\rotatebox{0}{$Log\epsilon$} }
+\psfrag{DOF}{$Log N_d$}
+	\centering
+	\includegraphics[scale=0.6]{car_ear.eps}
+	\caption{The interior potential near the driver's ear.}
+	\label{car_ear}
+\end{figure}
+
+\section{Conclusions}
+
+A fully discontinuous IGABEM for acoustic problems has been presented for the first time in this work. The discontinuous boundary patch has the ability to more efficiently approximate acoustic fields that exhibit large derivatives in the presence of discontinuous boundary conditions. The evaluation of discontinuity in IGABEM modelling of 3D acoustic problems with different sets of boundary conditions has been presented and compared to the conventional IGABEM approach as well as to the conventional BEM in its continuous and discontinuous forms. It has been shown that for certain absorbing materials, the continuous IGABEM presents lower errors and converges faster than the same problem with discontinuous IGABEM, while in other situations, the result is reversed. A simplified vehicle model subjected to realistic boundary conditions commonly found in automotive applications has also been presented. The result shows that in this vehicle application, the discontinuous IGABEM performs better than the continuous form. The proposed method has shown the ability to predict the interior noise level in passenger compartments effectively and reduce the vehicle design cycle, and we expect this result to have implications on software methods used in industry in the future.
+
+
+\section*{Acknowledgement}
+
+Yi Sun would like to thank the China Scholarship Council (CSC) and the 111 project (B17034) for the support provided to this research. 
+
+
+%\section*{References}
+
+%\bibliography{Yi_Acoustic}
+
+\begin{thebibliography}{69}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\href}[2]{#2}
+\providecommand{\path}[1]{#1}
+\providecommand{\DOIprefix}{doi:}
+\providecommand{\ArXivprefix}{arXiv:}
+\providecommand{\URLprefix}{URL: }
+\providecommand{\Pubmedprefix}{pmid:}
+\providecommand{\doi}[1]{\href{http://dx.doi.org/#1}{\path{#1}}}
+\providecommand{\Pubmed}[1]{\href{pmid:#1}{\path{#1}}}
+\providecommand{\bibinfo}[2]{#2}
+\ifx\xfnm\relax \def\xfnm[#1]{\unskip,\space#1}\fi
+%Type = Inbook
+\bibitem[{Morello et~al.(2011)Morello, Rossini, Pia, and Tonoli}]{Morello2011}
+\bibinfo{author}{L.~Morello}, \bibinfo{author}{L.~R. Rossini},
+  \bibinfo{author}{G.~Pia}, \bibinfo{author}{A.~Tonoli}, \bibinfo{title}{Noise,
+  Vibration, Harshness}, \bibinfo{publisher}{Springer Netherlands},
+  \bibinfo{address}{Dordrecht}, \bibinfo{year}{2011}, pp.
+  \bibinfo{pages}{239--363}.
+%Type = Article
+\bibitem[{Hussain and Peat(1994)}]{HUSSAIN1994197}
+\bibinfo{author}{K.~Hussain}, \bibinfo{author}{K.~Peat},
+\newblock \bibinfo{title}{Boundary element analysis of low frequency cavity
+  acoustical problems},
+\newblock \bibinfo{journal}{Journal of Sound and Vibration}
+  \bibinfo{volume}{169} (\bibinfo{year}{1994}) \bibinfo{pages}{197 -- 209}.
+%Type = Article
+\bibitem[{Thompson(2006)}]{Lonny}
+\bibinfo{author}{L.~L. Thompson},
+\newblock \bibinfo{title}{A review of finite-element methods for time-harmonic
+  acoustics},
+\newblock \bibinfo{journal}{The Journal of the Acoustical Society of America}
+  \bibinfo{volume}{119} (\bibinfo{year}{2006}) \bibinfo{pages}{1315--1330}.
+%Type = Book
+\bibitem[{Zienkiewicz and Taylor(2005)}]{Zienkiewicz}
+\bibinfo{author}{O.~Zienkiewicz}, \bibinfo{author}{R.~Taylor},
+  \bibinfo{title}{The {F}inite {E}lement {M}ethod—{T}he {T}hree {V}olume
+  {S}et}, \bibinfo{edition}{6th ed., {B}utterworth-{H}einemann} ed.,
+  \bibinfo{year}{2005}.
+%Type = Article
+\bibitem[{Brebbia and Ciskowski(1991)}]{Brebbia}
+\bibinfo{author}{C.~A. Brebbia}, \bibinfo{author}{R.~D. Ciskowski},
+\newblock \bibinfo{title}{Boundary {E}lement {M}ethods in {A}coustics},
+\newblock \bibinfo{journal}{Computational Mechanics Publications}
+  (\bibinfo{year}{1991}).
+%Type = Article
+\bibitem[{He et~al.(2010)He, Jin, and Zhang}]{He}
+\bibinfo{author}{J.~He}, \bibinfo{author}{X.~Jin}, \bibinfo{author}{Q.~Zhang},
+\newblock \bibinfo{title}{Powertrain mount system optimization based on
+  interior noise analysis},
+\newblock \bibinfo{journal}{2010 2nd International Conference on Future
+  Computer and Communication} \bibinfo{volume}{24} (\bibinfo{year}{2010})
+  \bibinfo{pages}{118--173}.
+%Type = Article
+\bibitem[{Franzoni et~al.(2004)Franzoni, Rouse, and Duvall}]{Franzoni}
+\bibinfo{author}{L.~Franzoni}, \bibinfo{author}{J.~Rouse},
+  \bibinfo{author}{T.~Duvall},
+\newblock \bibinfo{title}{A broadband energy-based boundary element method for
+  predicting vehicle interior noise},
+\newblock \bibinfo{journal}{The Journal of the Acoustical Society of America}
+  \bibinfo{volume}{115(5)} (\bibinfo{year}{2004}) \bibinfo{pages}{2538--2538}.
+%Type = Article
+\bibitem[{Banerjee and Butterfield(1981)}]{Banerjee}
+\bibinfo{author}{P.~Banerjee}, \bibinfo{author}{R.~Butterfield},
+\newblock \bibinfo{title}{Boundary {E}lement {M}ethods in {E}ngineering
+  {S}cience},
+\newblock \bibinfo{journal}{McGraw-Hill}  (\bibinfo{year}{1981}).
+%Type = Article
+\bibitem[{Wu(2000)}]{Wu}
+\bibinfo{author}{T.~Wu},
+\newblock \bibinfo{title}{Boundary {E}lement {A}coustics: {F}undamentals and
+  {C}omputer {C}odes},
+\newblock \bibinfo{journal}{WIT Press}  (\bibinfo{year}{2000}).
+%Type = Article
+\bibitem[{Krokstad et~al.(1968)Krokstad, Strom, and Sørsdal}]{KROKSTAD1968118}
+\bibinfo{author}{A.~Krokstad}, \bibinfo{author}{S.~Strom},
+  \bibinfo{author}{S.~Sørsdal},
+\newblock \bibinfo{title}{Calculating the acoustical room response by the use
+  of a ray tracing technique},
+\newblock \bibinfo{journal}{Journal of Sound and Vibration} \bibinfo{volume}{8}
+  (\bibinfo{year}{1968}) \bibinfo{pages}{118 -- 125}.
+%Type = Article
+\bibitem[{Le~Bot and Bocquillet(2000)}]{LeBot}
+\bibinfo{author}{A.~Le~Bot}, \bibinfo{author}{A.~Bocquillet},
+\newblock \bibinfo{title}{Comparison of an integral equation on energy and the
+  ray-tracing technique in room acoustics},
+\newblock \bibinfo{journal}{The Journal of the Acoustical Society of America}
+  \bibinfo{volume}{108} (\bibinfo{year}{2000}) \bibinfo{pages}{1732--1740}.
+%Type = Article
+\bibitem[{Keller(1962)}]{Keller62}
+\bibinfo{author}{J.~B. Keller},
+\newblock \bibinfo{title}{Geometrical theory of diffraction},
+\newblock \bibinfo{journal}{Journal of the Optical Society of America}
+  \bibinfo{volume}{52} (\bibinfo{year}{1962}) \bibinfo{pages}{116--130}.
+%Type = Inproceedings
+\bibitem[{Tsingos et~al.(2001)Tsingos, Funkhouser, Ngan, and
+  Carlbom}]{Tsingos2001}
+\bibinfo{author}{N.~Tsingos}, \bibinfo{author}{T.~Funkhouser},
+  \bibinfo{author}{A.~Ngan}, \bibinfo{author}{I.~Carlbom},
+\newblock \bibinfo{title}{Modeling acoustics in virtual environments using the
+  uniform theory of diffraction},
+\newblock in: \bibinfo{booktitle}{Proceedings of the 28th Annual Conference on
+  Computer Graphics and Interactive Techniques}, SIGGRAPH '01,
+  \bibinfo{publisher}{ACM}, \bibinfo{address}{New York, NY, USA},
+  \bibinfo{year}{2001}, pp. \bibinfo{pages}{545--552}.
+%Type = Book
+\bibitem[{Kirkup(1998)}]{Kirkup}
+\bibinfo{author}{S.~Kirkup}, \bibinfo{title}{The {B}oundary {E}lement {M}ethod
+  in {A}coustics}, \bibinfo{edition}{{H}ebden {B}ridge: integrated sound
+  software} ed., \bibinfo{year}{1998}.
+%Type = Book
+\bibitem[{Wrobel and Aliabadi(2002)}]{Wrobel}
+\bibinfo{author}{L.~C. Wrobel}, \bibinfo{author}{M.~H. Aliabadi},
+  \bibinfo{title}{The {B}oundary element method},
+  \bibinfo{publisher}{Chichester : Wiley}, \bibinfo{year}{2002}.
+%Type = Book
+\bibitem[{Becker(1992)}]{Becker}
+\bibinfo{author}{A.~A. Becker}, \bibinfo{title}{The boundary element method in
+  engineering : a complete course.}, \bibinfo{publisher}{London ; New York :
+  McGraw-Hill}, \bibinfo{year}{1992}.
+%Type = Article
+\bibitem[{Hughes et~al.(2005)Hughes, Cottrell, and Bazilevs}]{Hughes}
+\bibinfo{author}{T.~J.~R. Hughes}, \bibinfo{author}{J.~Cottrell},
+  \bibinfo{author}{Y.~Bazilevs},
+\newblock \bibinfo{title}{Isogeometric analysis: {CAD}, finite elements,
+  {NURBS}, exact geometry and mesh refinement},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{194} (\bibinfo{year}{2005})
+  \bibinfo{pages}{4135--4195}.
+%Type = Article
+\bibitem[{Coox et~al.(2016)Coox, Deckers, Vandepitte, and Desmet}]{COOX2016441}
+\bibinfo{author}{L.~Coox}, \bibinfo{author}{E.~Deckers},
+  \bibinfo{author}{D.~Vandepitte}, \bibinfo{author}{W.~Desmet},
+\newblock \bibinfo{title}{A performance study of {NURBS}-based isogeometric
+  analysis for interior two-dimensional time-harmonic acoustics},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{305} (\bibinfo{year}{2016}) \bibinfo{pages}{441
+  -- 467}.
+%Type = Article
+\bibitem[{Hughes et~al.(2014)Hughes, Evans, and Reali}]{HUGHES2014290}
+\bibinfo{author}{T.~J.~R. Hughes}, \bibinfo{author}{J.~A. Evans},
+  \bibinfo{author}{A.~Reali},
+\newblock \bibinfo{title}{Finite element and {NURBS} approximations of
+  eigenvalue, boundary-value, and initial-value problems},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{272} (\bibinfo{year}{2014}) \bibinfo{pages}{290
+  -- 320}.
+%Type = Article
+\bibitem[{Cottrell et~al.(2007)Cottrell, Hughes, and Reali}]{COTTRELL20074160}
+\bibinfo{author}{J.~A. Cottrell}, \bibinfo{author}{T.~J.~R. Hughes},
+  \bibinfo{author}{A.~Reali},
+\newblock \bibinfo{title}{Studies of refinement and continuity in isogeometric
+  structural analysis},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{196} (\bibinfo{year}{2007})
+  \bibinfo{pages}{4160 -- 4183}.
+%Type = Book
+\bibitem[{Cottrell et~al.(2009)Cottrell, Hughes, and Bazilevs}]{Cottrell}
+\bibinfo{author}{J.~A. Cottrell}, \bibinfo{author}{T.~J.~R. Hughes},
+  \bibinfo{author}{Y.~Bazilevs}, \bibinfo{title}{Isogeometric analysis: toward
+  integration of CAD and FEA}, \bibinfo{publisher}{John Wiley and Sons},
+  \bibinfo{year}{2009}.
+%Type = Article
+\bibitem[{Nguyen et~al.(2015)Nguyen, Anitescu, Bordas, and
+  Rabczuk}]{NGUYEN201589}
+\bibinfo{author}{V.~P. Nguyen}, \bibinfo{author}{C.~Anitescu},
+  \bibinfo{author}{S.~P.~A. Bordas}, \bibinfo{author}{T.~Rabczuk},
+\newblock \bibinfo{title}{Isogeometric analysis: An overview and computer
+  implementation aspects},
+\newblock \bibinfo{journal}{Mathematics and Computers in Simulation}
+  \bibinfo{volume}{117} (\bibinfo{year}{2015}) \bibinfo{pages}{89 -- 116}.
+%Type = Article
+\bibitem[{Peake et~al.(2013)Peake, Trevelyan, and Coates}]{Peake1}
+\bibinfo{author}{M.~Peake}, \bibinfo{author}{J.~Trevelyan},
+  \bibinfo{author}{G.~Coates},
+\newblock \bibinfo{title}{Extended isogeometric boundary element method
+  ({XIBEM}) for two-dimensional {H}elmholtz problems},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{259} (\bibinfo{year}{2013})
+  \bibinfo{pages}{93--102}.
+%Type = Article
+\bibitem[{Li and Qian(2011)}]{Li}
+\bibinfo{author}{K.~Li}, \bibinfo{author}{X.~Qian},
+\newblock \bibinfo{title}{Isogeometric analysis and shape optimization via
+  boundary integral},
+\newblock \bibinfo{journal}{Computer-Aided Design} \bibinfo{volume}{43(11)}
+  (\bibinfo{year}{2011}) \bibinfo{pages}{1427--1437}.
+%Type = Article
+\bibitem[{Scott et~al.(2013)Scott, Simpson, Evans, Bordas, Hughes, and
+  Sederberg}]{Scott}
+\bibinfo{author}{M.~Scott}, \bibinfo{author}{R.~Simpson},
+  \bibinfo{author}{J.~Evans}, \bibinfo{author}{S.~P.~A. Bordas},
+  \bibinfo{author}{T.~J.~R. Hughes}, \bibinfo{author}{T.~Sederberg},
+\newblock \bibinfo{title}{Isogeometric boundary element analysis using
+  unstructured {T}-splines},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{254} (\bibinfo{year}{2013})
+  \bibinfo{pages}{197--221}.
+%Type = Article
+\bibitem[{Simpson et~al.(2013)Simpson, Bordas, Lian, and Trevelyan}]{Simpson2}
+\bibinfo{author}{R.~Simpson}, \bibinfo{author}{S.~Bordas},
+  \bibinfo{author}{H.~Lian}, \bibinfo{author}{J.~Trevelyan},
+\newblock \bibinfo{title}{An isogeometric boundary element method for
+  elastostatic analysis: 2{D} implementation aspects},
+\newblock \bibinfo{journal}{Computers and Structures} \bibinfo{volume}{118}
+  (\bibinfo{year}{2013}) \bibinfo{pages}{2--12}.
+%Type = Article
+\bibitem[{Belibassakis et~al.(2013)Belibassakis, Gerostathis, Kostas, Politis,
+  Kaklis, Ginnis, and Feurer}]{BELIBASSAKIS201353}
+\bibinfo{author}{K.~Belibassakis}, \bibinfo{author}{T.~Gerostathis},
+  \bibinfo{author}{K.~Kostas}, \bibinfo{author}{C.~Politis},
+  \bibinfo{author}{P.~Kaklis}, \bibinfo{author}{A.~Ginnis},
+  \bibinfo{author}{C.~Feurer},
+\newblock \bibinfo{title}{A {BEM}-isogeometric method for the ship
+  wave-resistance problem},
+\newblock \bibinfo{journal}{Ocean Engineering} \bibinfo{volume}{60}
+  (\bibinfo{year}{2013}) \bibinfo{pages}{53 -- 67}.
+%Type = Article
+\bibitem[{Li et~al.(2018)Li, Trevelyan, Zhang, and Wang}]{JonTrevelyan2018975}
+\bibinfo{author}{S.~Li}, \bibinfo{author}{J.~Trevelyan},
+  \bibinfo{author}{W.~Zhang}, \bibinfo{author}{D.~Wang},
+\newblock \bibinfo{title}{Accelerating isogeometric boundary element analysis
+  for 3-dimensional elastostatics problems through black-box fast multipole
+  method with proper generalized decomposition},
+\newblock \bibinfo{journal}{International Journal for Numerical Methods in
+  Engineering} \bibinfo{volume}{114} (\bibinfo{year}{2018})
+  \bibinfo{pages}{975--998}.
+%Type = Article
+\bibitem[{Peake et~al.(2015)Peake, Trevelyan, and Coates}]{Peake2}
+\bibinfo{author}{M.~Peake}, \bibinfo{author}{J.~Trevelyan},
+  \bibinfo{author}{G.~Coates},
+\newblock \bibinfo{title}{Extended isogeometric boundary element method
+  ({XIBEM}) for three-dimensional medium-wave acoustic scattering problems},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{284} (\bibinfo{year}{2015})
+  \bibinfo{pages}{762--780}.
+%Type = Article
+\bibitem[{Gong et~al.(2017)Gong, Dong, and Qin}]{Gong2017454}
+\bibinfo{author}{Y.~P. Gong}, \bibinfo{author}{C.~Y. Dong},
+  \bibinfo{author}{X.~C. Qin},
+\newblock \bibinfo{title}{An isogeometric boundary element method for three
+  dimensional potential problems},
+\newblock \bibinfo{journal}{Journal of Computational and Applied Mathematics}
+  \bibinfo{volume}{313} (\bibinfo{year}{2017}) \bibinfo{pages}{454 -- 468}.
+%Type = Article
+\bibitem[{Keuchel et~al.(2017)Keuchel, Hagelstein, Zaleski, and von
+  Estorff}]{KEUCHEL2017488}
+\bibinfo{author}{S.~Keuchel}, \bibinfo{author}{N.~C. Hagelstein},
+  \bibinfo{author}{O.~Zaleski}, \bibinfo{author}{O.~von Estorff},
+\newblock \bibinfo{title}{Evaluation of hypersingular and nearly singular
+  integrals in the isogeometric boundary element method for acoustics},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{325} (\bibinfo{year}{2017}) \bibinfo{pages}{488
+  -- 504}.
+%Type = Article
+\bibitem[{Bai et~al.(2015)Bai, Dong, and Liu}]{BAI201554}
+\bibinfo{author}{Y.~Bai}, \bibinfo{author}{C.~Dong}, \bibinfo{author}{Z.~Liu},
+\newblock \bibinfo{title}{Effective elastic properties and stress states of
+  doubly periodic array of inclusions with complex shapes by isogeometric
+  boundary element method},
+\newblock \bibinfo{journal}{Composite Structures} \bibinfo{volume}{128}
+  (\bibinfo{year}{2015}) \bibinfo{pages}{54 -- 69}.
+%Type = Article
+\bibitem[{Simpson and Liu(2016)}]{Simpson2016168}
+\bibinfo{author}{R.~Simpson}, \bibinfo{author}{Z.~Liu},
+\newblock \bibinfo{title}{Acceleration of isogeometric boundary element
+  analysis through a black-box fast multipole method},
+\newblock \bibinfo{journal}{Engineering Analysis with Boundary Elements}
+  \bibinfo{volume}{66} (\bibinfo{year}{2016}) \bibinfo{pages}{168--182}.
+%Type = Article
+\bibitem[{Peng et~al.(2017)Peng, Atroshchenko, P., and Bordas}]{PENG2017151}
+\bibinfo{author}{X.~Peng}, \bibinfo{author}{E.~Atroshchenko},
+  \bibinfo{author}{P.}, \bibinfo{author}{S.~Bordas},
+\newblock \bibinfo{title}{Isogeometric boundary element methods for three
+  dimensional static fracture and fatigue crack growth},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{316} (\bibinfo{year}{2017}) \bibinfo{pages}{151
+  -- 185}. \bibinfo{note}{Special Issue on Isogeometric Analysis: Progress and
+  Challenges}.
+%Type = Article
+\bibitem[{Simpson et~al.(2018)Simpson, Liu, Vázquez, and
+  Evans}]{SIMPSON2018264}
+\bibinfo{author}{R.~Simpson}, \bibinfo{author}{Z.~Liu},
+  \bibinfo{author}{R.~Vázquez}, \bibinfo{author}{J.~Evans},
+\newblock \bibinfo{title}{An isogeometric boundary element method for
+  electromagnetic scattering with compatible b-spline discretizations},
+\newblock \bibinfo{journal}{Journal of Computational Physics}
+  \bibinfo{volume}{362} (\bibinfo{year}{2018}) \bibinfo{pages}{264 -- 289}.
+%Type = Article
+\bibitem[{D{\"o}lz et~al.(2018)D{\"o}lz, Kurz, Sch{\"o}ps, and
+  Wolf}]{dolz2018isogeometric}
+\bibinfo{author}{J.~D{\"o}lz}, \bibinfo{author}{S.~Kurz},
+  \bibinfo{author}{S.~Sch{\"o}ps}, \bibinfo{author}{F.~Wolf},
+\newblock \bibinfo{title}{Isogeometric boundary elements in electromagnetism:
+  Rigorous analysis, fast methods, and examples},
+\newblock \bibinfo{journal}{arXiv preprint arXiv:1807.03097}
+  (\bibinfo{year}{2018}).
+%Type = Article
+\bibitem[{Kostas et~al.(2015)Kostas, Ginnis, Politis, and
+  Kaklis}]{KOSTAS2015611}
+\bibinfo{author}{K.~V. Kostas}, \bibinfo{author}{A.~I. Ginnis},
+  \bibinfo{author}{C.~G. Politis}, \bibinfo{author}{P.~D. Kaklis},
+\newblock \bibinfo{title}{Ship-hull shape optimization with a {T}-spline based
+  {BEM}–isogeometric solver},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{284} (\bibinfo{year}{2015}) \bibinfo{pages}{611
+  -- 622}.
+%Type = Article
+\bibitem[{Gillebaart and Breuker(2016)}]{GILLEBAART2016512}
+\bibinfo{author}{E.~Gillebaart}, \bibinfo{author}{R.~D. Breuker},
+\newblock \bibinfo{title}{Low-fidelity 2{D} isogeometric aeroelastic analysis
+  and optimization method with application to a morphing airfoil},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{305} (\bibinfo{year}{2016}) \bibinfo{pages}{512
+  -- 536}.
+%Type = Article
+\bibitem[{Yoon and Cho(2016)}]{YOON2016119}
+\bibinfo{author}{M.~Yoon}, \bibinfo{author}{S.~Cho},
+\newblock \bibinfo{title}{Isogeometric shape design sensitivity analysis of
+  elasticity problems using boundary integral equations},
+\newblock \bibinfo{journal}{Engineering Analysis with Boundary Elements}
+  \bibinfo{volume}{66} (\bibinfo{year}{2016}) \bibinfo{pages}{119 -- 128}.
+%Type = Article
+\bibitem[{Lian et~al.(2017)Lian, Kerfriden, and Bordas}]{LIAN20171}
+\bibinfo{author}{H.~Lian}, \bibinfo{author}{P.~Kerfriden},
+  \bibinfo{author}{S.~Bordas},
+\newblock \bibinfo{title}{Shape optimization directly from {CAD}: An
+  isogeometric boundary element approach using {T}-splines},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{317} (\bibinfo{year}{2017}) \bibinfo{pages}{1
+  -- 41}.
+%Type = Article
+\bibitem[{Simpson et~al.(2014)Simpson, Scott, Taus, Thomas, and
+  Lian}]{Simpson1}
+\bibinfo{author}{R.~Simpson}, \bibinfo{author}{M.~Scott},
+  \bibinfo{author}{M.~Taus}, \bibinfo{author}{D.~Thomas},
+  \bibinfo{author}{H.~Lian},
+\newblock \bibinfo{title}{Acoustic isogeometric boundary element analysis},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{269} (\bibinfo{year}{2014})
+  \bibinfo{pages}{265--290}.
+%Type = Article
+\bibitem[{Marussig et~al.(2015)Marussig, Zechner, Beer, and
+  Fries}]{MARUSSIG2015458}
+\bibinfo{author}{B.~Marussig}, \bibinfo{author}{J.~Zechner},
+  \bibinfo{author}{G.~Beer}, \bibinfo{author}{T.-P. Fries},
+\newblock \bibinfo{title}{Fast isogeometric boundary element method based on
+  independent field approximation},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{284} (\bibinfo{year}{2015}) \bibinfo{pages}{458
+  -- 488}. \bibinfo{note}{Isogeometric Analysis Special Issue}.
+%Type = Article
+\bibitem[{Brebbia and Dom\'inguez(1977)}]{brebbia1977boundary}
+\bibinfo{author}{C.~A. Brebbia}, \bibinfo{author}{J.~Dom\'inguez},
+\newblock \bibinfo{title}{Boundary element methods for potential problems},
+\newblock \bibinfo{journal}{Applied Mathematical Modelling} \bibinfo{volume}{1}
+  (\bibinfo{year}{1977}) \bibinfo{pages}{372 -- 378}.
+%Type = Inbook
+\bibitem[{Xu and Brebbia(1986)}]{Xu1986}
+\bibinfo{author}{J.~M. Xu}, \bibinfo{author}{C.~A. Brebbia},
+  \bibinfo{title}{Optimum Positions for the Nodes in Discontinuous Boundary
+  Elements}, \bibinfo{publisher}{Springer Berlin Heidelberg},
+  \bibinfo{address}{Berlin, Heidelberg}, \bibinfo{year}{1986}, pp.
+  \bibinfo{pages}{751--767}.
+%Type = Article
+\bibitem[{Parreira(1988)}]{PARREIRA1988205}
+\bibinfo{author}{P.~Parreira},
+\newblock \bibinfo{title}{On the accuracy of continuous and discontinuous
+  boundary elements},
+\newblock \bibinfo{journal}{Engineering Analysis} \bibinfo{volume}{5}
+  (\bibinfo{year}{1988}) \bibinfo{pages}{205 -- 211}.
+%Type = Article
+\bibitem[{Wang and Benson(2015)}]{YWang}
+\bibinfo{author}{Y.~J. Wang}, \bibinfo{author}{D.~J. Benson},
+\newblock \bibinfo{title}{Multi-patch nonsingular isogeometric boundary element
+  analysis in 3{D}},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{293} (\bibinfo{year}{2015})
+  \bibinfo{pages}{71--91}.
+%Type = Article
+\bibitem[{Zayed(2007)}]{Zayed2007Hearing}
+\bibinfo{author}{E.~M.~E. Zayed},
+\newblock \bibinfo{title}{Hearing the shape of a compact riemannian manifold
+  with a finite number of piecewise impedance boundary conditions},
+\newblock \bibinfo{journal}{International Journal of Mathematics \&
+  Mathematical Sciences} \bibinfo{volume}{20} (\bibinfo{year}{2007})
+  \bibinfo{pages}{397--402}.
+%Type = Article
+\bibitem[{Guo et~al.(2015)Guo, Yan, and Cai}]{guo2015multilayered}
+\bibinfo{author}{J.~Guo}, \bibinfo{author}{G.~Yan}, \bibinfo{author}{M.~Cai},
+\newblock \bibinfo{title}{Multilayered scattering problem with generalized
+  impedance boundary condition on the core},
+\newblock \bibinfo{journal}{Journal of Applied Mathematics}
+  \bibinfo{volume}{2015} (\bibinfo{year}{2015}).
+%Type = Article
+\bibitem[{Perrey-Debain et~al.(2005)Perrey-Debain, Trevelyan, and
+  Bettess}]{1391165}
+\bibinfo{author}{E.~Perrey-Debain}, \bibinfo{author}{J.~Trevelyan},
+  \bibinfo{author}{P.~Bettess},
+\newblock \bibinfo{title}{On wave boundary elements for radiation and
+  scattering problems with piecewise constant impedance},
+\newblock \bibinfo{journal}{IEEE Transactions on Antennas and Propagation}
+  \bibinfo{volume}{53} (\bibinfo{year}{2005}) \bibinfo{pages}{876--879}.
+%Type = Article
+\bibitem[{Laghrouche et~al.(2005)Laghrouche, Bettess, Perrey-Debain, and
+  Trevelyan}]{LAGHROUCHE2005367}
+\bibinfo{author}{O.~Laghrouche}, \bibinfo{author}{P.~Bettess},
+  \bibinfo{author}{E.~Perrey-Debain}, \bibinfo{author}{J.~Trevelyan},
+\newblock \bibinfo{title}{Wave interpolation finite elements for {H}elmholtz
+  problems with jumps in the wave speed},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{194} (\bibinfo{year}{2005}) \bibinfo{pages}{367
+  -- 381}.
+%Type = Article
+\bibitem[{Piegl and Tiller(1997)}]{Piegl}
+\bibinfo{author}{L.~Piegl}, \bibinfo{author}{W.~Tiller},
+\newblock \bibinfo{title}{The {NURBS} {B}ook}  (\bibinfo{year}{1997}).
+%Type = Article
+\bibitem[{Rogers(2001)}]{Rogers}
+\bibinfo{author}{D.~F. Rogers},
+\newblock \bibinfo{title}{An introduction to {NURBS}: with historical
+  perspective}  (\bibinfo{year}{2001}).
+%Type = Article
+\bibitem[{Cox(1972)}]{Cox}
+\bibinfo{author}{M.~G. Cox},
+\newblock \bibinfo{title}{The numerical evaluation of {B}-splines},
+\newblock \bibinfo{journal}{IMA Journal of Applied Mathematics}
+  \bibinfo{volume}{10} (\bibinfo{year}{1972}) \bibinfo{pages}{134--149}.
+%Type = Article
+\bibitem[{Boor(1972)}]{Boor}
+\bibinfo{author}{C.~D. Boor},
+\newblock \bibinfo{title}{On calculating with {B}-splines},
+\newblock \bibinfo{journal}{Journal of Approximation Theory}
+  \bibinfo{volume}{6} (\bibinfo{year}{1972}) \bibinfo{pages}{50--62}.
+%Type = Book
+\bibitem[{Morse and Ingard(1968)}]{Morse}
+\bibinfo{author}{P.~Morse}, \bibinfo{author}{K.~Ingard},
+  \bibinfo{title}{Theoretical {A}coustics}, \bibinfo{publisher}{Princeton
+  University Press}, \bibinfo{year}{1968}.
+%Type = Article
+\bibitem[{Karami and Derakhshan(1999)}]{KARAMI1999317}
+\bibinfo{author}{G.~Karami}, \bibinfo{author}{D.~Derakhshan},
+\newblock \bibinfo{title}{An efficient method to evaluate hypersingular and
+  supersingular integrals in boundary integral equations analysis},
+\newblock \bibinfo{journal}{Engineering Analysis with Boundary Elements}
+  \bibinfo{volume}{23} (\bibinfo{year}{1999}) \bibinfo{pages}{317 -- 326}.
+%Type = Article
+\bibitem[{Cruse and Aithal(1993)}]{NME:NME1620360205}
+\bibinfo{author}{T.~A. Cruse}, \bibinfo{author}{R.~Aithal},
+\newblock \bibinfo{title}{Non-singular boundary integral equation
+  implementation},
+\newblock \bibinfo{journal}{International Journal for Numerical Methods in
+  Engineering} \bibinfo{volume}{36} (\bibinfo{year}{1993})
+  \bibinfo{pages}{237--254}.
+%Type = Article
+\bibitem[{Lachat and Watson(1976)}]{NME:NME1620100503}
+\bibinfo{author}{J.~C. Lachat}, \bibinfo{author}{J.~O. Watson},
+\newblock \bibinfo{title}{Effective numerical treatment of boundary integral
+  equations: {A} formulation for three-dimensional elastostatics},
+\newblock \bibinfo{journal}{International Journal for Numerical Methods in
+  Engineering} \bibinfo{volume}{10} (\bibinfo{year}{1976})
+  \bibinfo{pages}{991--1005}.
+%Type = Article
+\bibitem[{Sladek and Sladek(1998)}]{SLADEK1998251}
+\bibinfo{author}{V.~Sladek}, \bibinfo{author}{J.~Sladek},
+\newblock \bibinfo{title}{Singular integrals and boundary elements},
+\newblock \bibinfo{journal}{Computer Methods in Applied Mechanics and
+  Engineering} \bibinfo{volume}{157} (\bibinfo{year}{1998}) \bibinfo{pages}{251
+  -- 266}.
+%Type = Article
+\bibitem[{Guiggiani and Casalini(1987)}]{NME:NME1620240908}
+\bibinfo{author}{M.~Guiggiani}, \bibinfo{author}{P.~Casalini},
+\newblock \bibinfo{title}{Direct computation of {C}auchy {P}rincipal {V}alue
+  integrals in advanced boundary elements},
+\newblock \bibinfo{journal}{International Journal for Numerical Methods in
+  Engineering} \bibinfo{volume}{24} (\bibinfo{year}{1987})
+  \bibinfo{pages}{1711--1720}.
+%Type = Article
+\bibitem[{Liu and Rudolphi(1991)}]{Liu}
+\bibinfo{author}{Y.~Liu}, \bibinfo{author}{T.~J. Rudolphi},
+\newblock \bibinfo{title}{Some identities for fundamental solutions and their
+  applications to weakly-singular boundary element formulations},
+\newblock \bibinfo{journal}{Engineering Analysis with Boundary Elements}
+  \bibinfo{volume}{8} (\bibinfo{year}{1991}) \bibinfo{pages}{301--311}.
+%Type = Book
+\bibitem[{Stroud and Secrest(1966)}]{Stroud}
+\bibinfo{author}{A.~H. Stroud}, \bibinfo{author}{D.~Secrest},
+  \bibinfo{title}{Gaussian quadrature formulas},
+  \bibinfo{publisher}{Prentice-Hall}, \bibinfo{year}{1966}.
+%Type = Article
+\bibitem[{Telles(1987)}]{Telles}
+\bibinfo{author}{J.~C.~F. Telles},
+\newblock \bibinfo{title}{A self-adaptive coordinate transformation for
+  efficient numerical evaluation of general boundary element integrals},
+\newblock \bibinfo{journal}{International Journal for Numerical Methods in
+  Engineering} \bibinfo{volume}{4} (\bibinfo{year}{1987})
+  \bibinfo{pages}{959--973}.
+%Type = Article
+\bibitem[{Schenck(1968)}]{Harry}
+\bibinfo{author}{H.~A. Schenck},
+\newblock \bibinfo{title}{Improved integral formulation for acoustic radiation
+  problems},
+\newblock \bibinfo{journal}{The Journal of the Acoustical Society of America}
+  \bibinfo{volume}{44} (\bibinfo{year}{1968}) \bibinfo{pages}{41--58}.
+%Type = Article
+\bibitem[{Burton and Miller(1971)}]{Burton201}
+\bibinfo{author}{A.~J. Burton}, \bibinfo{author}{G.~F. Miller},
+\newblock \bibinfo{title}{The application of integral equation methods to the
+  numerical solution of some exterior boundary-value problems},
+\newblock \bibinfo{journal}{Proceedings of the Royal Society of London A:
+  Mathematical, Physical and Engineering Sciences} \bibinfo{volume}{323}
+  (\bibinfo{year}{1971}) \bibinfo{pages}{201--210}.
+%Type = Article
+\bibitem[{Greville(1964)}]{Greville}
+\bibinfo{author}{T.~Greville},
+\newblock \bibinfo{title}{Numerical procedures for interpolation by spline
+  functions},
+\newblock \bibinfo{journal}{Journal of the Society for Industrial and Applied
+  Mathematics Series B Numerical Analysis} \bibinfo{volume}{24}
+  (\bibinfo{year}{1964}) \bibinfo{pages}{118--173}.
+%Type = Article
+\bibitem[{Johnson(2005)}]{Johnson}
+\bibinfo{author}{R.~Johnson},
+\newblock \bibinfo{title}{Higher order {B}-spline collocation at the {G}reville
+  abscissae},
+\newblock \bibinfo{journal}{Applied Numerical Mathematics} \bibinfo{volume}{52}
+  (\bibinfo{year}{2005}) \bibinfo{pages}{63--75}.
+%Type = Article
+\bibitem[{Marburg and Schneider(2003)}]{Marburg}
+\bibinfo{author}{S.~Marburg}, \bibinfo{author}{S.~Schneider},
+\newblock \bibinfo{title}{Influence of element types on numeric error for
+  acoustic boundary elements},
+\newblock \bibinfo{journal}{Journal of Computational Acoustics}
+  \bibinfo{volume}{11} (\bibinfo{year}{2003}) \bibinfo{pages}{363--386}.
+%Type = Phdthesis
+\bibitem[{Zhu(2005)}]{Jing}
+\bibinfo{author}{J.~Zhu}, \bibinfo{title}{On the {S}imulation of the {I}nterior
+  {N}oise of a {L}ight {B}us}, Ph.D. thesis, Jiangsu University,
+  \bibinfo{year}{2005}.
+
+\end{thebibliography}
+
+\end{document}

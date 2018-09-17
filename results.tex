@@ -1,0 +1,9 @@
+\section{Results}
+\label{section:intra-particle}
+
+Our multithreaded collision detection code runs a classic data decomposition
+scheme on the triangles:
+While the first triangle $T_i$ of $p_i$ is compared to the first triangle of $T_j$, we can simultaneously compare the second triangle. 
+The concurrency scales in the number of triangles per particle.
+Synchronisation points, i.e.~critical sections, are solely the insertion of
+contact points into the result set.

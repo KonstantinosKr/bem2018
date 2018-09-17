@@ -1,0 +1,63 @@
+\documentclass{llncs}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{color}
+\usepackage{amssymb}
+
+
+\title{Fast DEM collision checks on multicore nodes}
+
+\titlerunning{Fast collision checks on multicores}
+
+\author{
+%  \inst{1}
+  Konstantinos Krestenitis
+  \and
+  Tobias Weinzierl
+%  \inst{1}
+\thanks{
+This work has been sponsored by EPSRC (Engineering and Physical Sciences
+Research Council) and EDF Energy as part of an ICASE studentship  (award ref 1429338). 
+It made use of the facilities of the Hamilton HPC Service of Durham
+University.
+All software is freely available from \url{https://github.com/KonstantinosKr/delta}
+(pronounced/written $\Delta $).
+}
+}
+
+\institute{
+  School of Engineering and Computing Sciences\\
+  Durham University\\
+  Great Britain \\
+  \email{\{konstantinos.krestenitis,tobias.weinzierl\}@durham.ac.uk}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Many particle simulations today rely on spherical or analytical particle shape
+descriptions.
+They find non-spherical, triangulated particle models computationally
+infeasible due to expensive collision detections.
+We propose a hybrid collision detection algorithm based upon an iterative
+solve of a minimisation problem that automatically falls back to a brute-force
+comparison-based algorithm variant if the problem is ill-posed.
+Such a hybrid can exploit the vector facilities of modern chips and it is
+well-prepared for the arising manycore era.
+Our approach pushes the boundary where non-analytical particle shapes
+and the aligning of more accurate first principle physics become manageable.
+\end{abstract}
+ 
+\input{introduction}
+\input{model}
+\input{results}
+\input{conclusion}
+
+\bibliographystyle{siam}
+\bibliography{paper} 
+
+\end{document}

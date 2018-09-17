@@ -1,0 +1,136 @@
+\Chapter{Model}
+
+
+\section{The particle and collision model}
+\label{section:model}
+
+%
+% Definition of a particle 
+% overall algorithmic sketch
+% 
+We study media composed of particles of arbitrary size.
+Each particle $p_i \in \mathbb{P}$ is described  by a set of
+triangles $\mathbb{T}_i$.
+We do not impose any constraints on the triangle layout such as convexity.
+Our algorithms of interest consist of an explicit time stepping loop with a time
+step size $\Delta t$.
+Per time step, it runs over all particle pairs and identifies where any
+particle pair collides with each other: we determine the contact points.
+Per contact point, we determine the arising forces on the involved particles.
+Once all forces for all particles are accumulated, we update the particle velocities
+and positions and continue.
+If the contact point detection identifies that particles are too close to each
+other it halves $\Delta t$.
+If no contact points are identified at all, it increases $\Delta t$ by 10\%.
+
+\begin{figure}[htb]
+  \begin{center}
+    \includegraphics[width=0.45\textwidth]{CP014_fig1}
+  \end{center}
+  \vspace{-0.6cm}
+  \caption{
+    Three particles with their $\epsilon $ environment. The particles do
+    not penetrate each other, but two particles plus their $\epsilon $
+    environment penetrate and create one contact point (diamond point) with a normal $n$. 
+  }
+  \label{figure:minkowski}
+  \vspace{-0.4cm}
+\end{figure}
+
+
+%
+% \epsilon environment
+%
+%
+Our contact model is based upon an $\epsilon$ environment around each
+particle and a weak compressibility model for this $\epsilon$-area:
+Two particles are in contact as soon as they are closer than $2\epsilon$.
+Mirroring Minkowski sums, we may interpret each particle to be enlarged by a
+soft layer of width $\epsilon$ (Fig.~\ref{figure:minkowski}).
+Particles are in contact with each other as soon as these soft areas penetrate.
+If two particles are in contact, the contact point is the point that is closest
+to the particles' surfaces.
+We do not support contact areas at the moment but multiple contact points per
+particle pair may exist.
+Each contact point is associated one outer normal vector $n$ per involved
+particle.
+Though our particles themselves are rigid, we call $\epsilon-|n|$ between a contact point and the real particle surface the penetration depth.
+
+
+%
+% Spring dashpot
+% Too close
+%
+
+Our force computation equals pseudo-elastic damping as it is used in
+geometry overlapping methods \cite{Boac2014}.
+We rely on the spring-dashpot DEM force model \cite{Cundall1979}
+which yields per particle pair $p_i, p_j$ forces 
+
+\begin{align} 
+  f_{\bot}(p_i,p_j) &=
+  \left\{
+   \begin{array}{ll}
+    S \cdot (\epsilon - |n_{ij}|) +2D \cdot \left(\sqrt{\frac{1.0}{\frac{1.0}{m_i} + \frac{1.0}{m_j}}}\right) \cdot (v_{ij},\frac{n_{ij}}{|n_{ij}|}) 
+    &
+    \mbox{if}\ (v_{i},v_{j})\leq 0 \\
+    0 & \mbox{otherwise}
+   \end{array}
+  \right.,
+  \nonumber
+  \\
+  f_{\parallel}(p_i,p_j) &= r \times f_{\top}(p_i,p_j)
+    \label{equation:forces}
+\end{align}
+
+
+
+\noindent
+acting on $p_i$. 
+The forces on $p_j$ result from parameter permutation.
+$(.,.)$ denotes the Euclidean scalar product, 
+$D$ is a damping, $S$ the spring coefficient.
+$v_{ij}$ is the relative collision velocity $v_j-v_i$.
+$m$ denotes the mass of $p_i$ or $p_j$ respectively, $n_{ij}$ is the contact
+normal pointing from the contact point in-between the particles onto the surface of particle $j$, i.e.~from $i$ to $j$.
+
+The orthogonal force $f_{\bot}$ models solely repulsive forces, i.e.~forces
+arise if and only if two particles continue to approach each other. 
+The tangential force injects friction into the system.
+Obviously, system (\ref{equation:forces}) is stiff and cannot avoid penetration
+of the real particles without their halo environment.
+We thus rely on small time step sizes $\Delta t$ and reduce $\Delta t$ as soon
+as $|n| \leq 0.2 \cdot \epsilon $ for any contact point normal in the system.
+$f_{\parallel}(p_i,p_j)$ is the torque force, where $r$ is the lever arm of $p_i$'s
+centre of mass to the contact point.
+
+%
+% Complexity
+% Linked-cell approach
+% Brute force approach
+% Constant size
+%
+The plain algorithm is in $\mathcal{O}(| \mathbb{P} |^2 \cdot
+\mathbb{T}_{max}^2 )$ with $\mathbb{T}_{max} = max _i | \mathbb{T}_i | $.
+We rely on a multiscale linked-cell approach based upon adaptive Cartesian
+meshes as it is used in molecular dynamics codes
+\cite{Griebel.Knapek.Zumbusch:2007}:
+The computational domain is split into cubes that are at least as large as
+the biggest particle in the system and the cubes host the particles, i.e.~hold
+links to the particles.
+The realisation stems from \cite{Weinzierl2016}.
+Particles can be in contact if and only if they are hosted by the same or
+neighbouring cells.
+This reduces the first quadratic term to a linear one as
+rigid particles cannot cluster arbitrarily dense.
+The second quadratic term results from the fact that we have to compare, for two
+particles $p_i$ and $p_j$, each triangle from particle $p_i$ with each triangle
+from $p_j$.
+Each pair of triangles requires fifteen checks: point-to-face
+($2 \cdot 3=6$) and edge-to-edge ($3^2=9$).
+These comparisons are based upon a barycentric coordinate transform and yield
+a sequence of computations followed by if statements filtering out
+inadmissible solutions.
+The 15 distance computations then are reduced subject to the minimum function.
+Vectorisation of this approach labelled {\em brute force} suffers from branching
+and low arithmetic intensity.
